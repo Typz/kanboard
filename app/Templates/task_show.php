@@ -66,12 +66,21 @@
 </div>
 <?php endif ?>
 
-
-<?php if (! empty($subtasks)): ?>
 <div id="subtasks" class="task-show-section">
+<?php if (! empty($subtasks)): ?>
     <?= Helper\template('subtask_show', array('task' => $task, 'subtasks' => $subtasks)) ?>
-</div>
+<?php else: ?>
+    <div class="page-header">
+        <h2><?= t('Sub-Tasks') ?></h2>
+    </div>
+     <form method="post" action="?controller=subtask&amp;action=save&amp;task_id=<?= $task['id'] ?>" autocomplete="off">
+        <?= Helper\form_csrf() ?>
+        <?= Helper\form_hidden('task_id', array('task_id'=>$task['id'])) ?>
+        <?= Helper\form_text('title', $values, array(), array('required', 'placeholder="' . t('Type here to create a new sub-task') . '"')) ?>
+        <input type="submit" value="<?= t('Add') ?>" class="btn btn-blue"/>
+    </form>
 <?php endif ?>
+</div>
 
 
 <?php if (! empty($comments)): ?>

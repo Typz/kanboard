@@ -21,7 +21,17 @@ $total_remaining = 0;
     <?php foreach ($subtasks as $subtask): ?>
     <tr>
         <td><?= Helper\escape($subtask['title']) ?></td>
-        <td><?= Helper\escape($subtask['status_name']) ?></td>
+        <td>
+            <a href="?controller=subtask&amp;action=toggleStatus&amp;task_id=<?= $task['id'] ?>&amp;subtask_id=<?= $subtask['id'] ?>">
+                <?php if ($subtask['status'] == 0): ?>
+                    <i class="fa fa-square-o fa-fw"></i><i class="fa">&nbsp;<?= Helper\escape($subtask['status_name']) ?></i>
+                <?php elseif ($subtask['status'] == 1): ?>
+                    <i class="fa fa-spinner fa-spin fa-fw"></i><i class="fa">&nbsp;<?= Helper\escape($subtask['status_name']) ?></i>
+                <?php else: ?>
+                    <i class="fa fa-check-square-o fa-fw"></i><i class="fa">&nbsp;<?= Helper\escape($subtask['status_name']) ?></i>
+                <?php endif ?>
+            </a>
+        </td>
         <td>
             <?php if (! empty($subtask['username'])): ?>
                 <?= Helper\escape($subtask['username']) ?>
@@ -48,7 +58,15 @@ $total_remaining = 0;
             $total_remaining = $total_estimated - $total_spent;
         ?>
     <?php endforeach ?>
+
 </table>
+
+<form method="post" action="?controller=subtask&amp;action=save&amp;task_id=<?= $task['id'] ?>" autocomplete="off">
+    <?= Helper\form_csrf() ?>
+    <?= Helper\form_hidden('task_id', array('task_id'=>$task['id'])) ?>
+    <?= Helper\form_text('title', $values, array(), array('required', 'placeholder="' . t('Type here to create a new sub-task') . '"')) ?>
+    <input type="submit" value="<?= t('Add') ?>" class="btn btn-blue"/>
+</form>
 
 <div class="subtasks-time-tracking">
     <h4><?= t('Time tracking') ?></h4>
