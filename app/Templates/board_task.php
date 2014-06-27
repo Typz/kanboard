@@ -69,11 +69,11 @@
         <?php endif ?>
 
         <?php if (! empty($task['nb_subtasks'])): ?>
-            <?= $task['completed_subtasks'] ?>/<?= $task['nb_subtasks'] ?> <i class="fa fa-check-square-o" title="<?= t('Subtasks') ?>"></i>
+            <?= $task['completed_subtasks'] ?>/<?= $task['nb_subtasks'] ?> <i class="task-board-tooltip fa fa-check-square-o" title="<?= t('Subtasks') ?>" href='?controller=board&amp;action=getSubtasks&amp;task_id=<?= $task['id'] ?>'></i>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
-            <a class="task-board-popover" href='?controller=task&amp;action=editDescription&amp;task_id=<?= $task['id'] ?>'><i class="fa fa-file-text-o" title="<?= t('Description') ?>"></i></a>
+            <a class="task-board-popover" href='?controller=task&amp;action=editDescription&amp;task_id=<?= $task['id'] ?>'><i class="task-board-tooltip fa fa-file-text-o" title="<?= t('Description') ?>" data-content="<?= Helper\escape(Helper\parse($task['description'])) ?>"></i></a>
         <?php endif ?>
     </div>
 </div>
