@@ -55,7 +55,7 @@
 
     <?php if (! empty($task['date_due'])): ?>
     <div class="task-board-date">
-        <?= dt('%B %e, %G', $task['date_due']) ?>
+        <i class="fa fa-calendar"></i> <?= dt('%b %e, %G', $task['date_due']) ?>
     </div>
     <?php endif ?>
 
