@@ -50,7 +50,7 @@
 <?php endif ?>
 
 
-<?php if (! empty($task['date_due']) || ! empty($task['nb_files']) || ! empty($task['nb_comments']) || ! empty($task['description'])): ?>
+<?php if (! empty($task['date_due']) || ! empty($task['nb_files']) || ! empty($task['nb_comments']) || ! empty($task['description']) || ! empty($task['nb_subtasks'])): ?>
 <div class="task-board-footer">
 
     <?php if (! empty($task['date_due'])): ?>
@@ -66,6 +66,10 @@
 
         <?php if (! empty($task['nb_comments'])): ?>
             <?= $task['nb_comments'] ?> <i class="fa fa-comment-o" title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"></i>
+        <?php endif ?>
+
+        <?php if (! empty($task['nb_subtasks'])): ?>
+            <?= $task['completed_subtasks'] ?>/<?= $task['nb_subtasks'] ?> <i class="fa fa-check-square-o" title="<?= t('Subtasks') ?>"></i>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
