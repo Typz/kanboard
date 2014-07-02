@@ -553,6 +553,7 @@ a.filter-on {
     background: #fafafa;
     height: 70px;
     margin-bottom: 10px;
+    border-radius: 4px;
 }
 
 .board-add-icon {
@@ -571,7 +572,8 @@ a.filter-on {
     margin-bottom: 10px;
     border: 1px solid #000;
     padding: 5px;
-    font-size: 95%;
+    font-size: 90%;
+    border-radius: 4px;
 }
 
 .task-table a,
@@ -589,7 +591,7 @@ a.filter-on {
 }
 
 .task-board-title {
-    margin-top: 10px;
+    margin-top: 5px;
     font-size: 110%;
 }
 
@@ -609,7 +611,10 @@ a.task-board-nobody {
 
 .task-board-category-container {
     text-align: right;
+	position: absolute;
     padding-bottom: 2px;
+	right: 3px;
+	top: 3px;
 }
 
 .task-board-category {
@@ -641,6 +646,10 @@ a.task-board-nobody {
     right: 5px;
 }
 
+.task-board-icons i {
+    font-size:110%;
+}
+
 .task-board-icons * + * {
     margin-left: 3px;
 }
@@ -648,13 +657,12 @@ a.task-board-nobody {
 /* task score */
 .task-score {
     font-weight: bold;
-    position: absolute;
 }
 
 .task-board .task-score {
     font-size: 1.5em;
-    right: 5px;
-    top: 0;
+	vertical-align: top;
+	line-height: 1.1em;
 }
 
 /* task view */
@@ -708,6 +716,7 @@ a.task-board-nobody {
     font-size: 1.9em;
     right: 10px;
     bottom: 5px;
+    position: absolute;
 }
 
 .task-show-section {

@@ -10,9 +10,14 @@
     <?php endif ?>
     </span>
 
-    <?php if ($task['score']): ?>
-        <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-    <?php endif ?>
+    <div class="task-board-category-container">
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category"><?= Helper\in_list($task['category_id'], $categories) ?></span>
+        <?php endif ?>
+    </div>
 
     <div class="task-board-title">
         <?= Helper\escape($task['title']) ?>
@@ -30,25 +35,20 @@
     <?php endif ?>
     </span>
 
-    <?php if ($task['score']): ?>
-        <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-    <?php endif ?>
+    <div class="task-board-category-container">
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category"><?= Helper\in_list($task['category_id'], $categories) ?></span>
+        <?php endif ?>
+    </div>
 
     <div class="task-board-title">
         <a href="?controller=task&amp;action=show&amp;task_id=<?= $task['id'] ?>" title="<?= t('View this task') ?>"><?= Helper\escape($task['title']) ?></a>
     </div>
 
 <?php endif ?>
-
-
-<?php if ($task['category_id']): ?>
-<div class="task-board-category-container">
-    <span class="task-board-category">
-        <?= Helper\in_list($task['category_id'], $categories) ?>
-    </span>
-</div>
-<?php endif ?>
-
 
 <?php if (! empty($task['date_due']) || ! empty($task['nb_files']) || ! empty($task['nb_comments']) || ! empty($task['description']) || ! empty($task['nb_subtasks'])): ?>
 <div class="task-board-footer">
