@@ -61,15 +61,15 @@
 
     <div class="task-board-icons">
         <?php if (! empty($task['nb_files'])): ?>
-            <?= $task['nb_files'] ?> <i class="fa fa-paperclip" title="<?= t('Attachments') ?>"></i>
+            <i class="fa fa-paperclip" title="<?= t('Attachments') ?>"></i><?= $task['nb_files'] ?>
         <?php endif ?>
 
         <?php if (! empty($task['nb_comments'])): ?>
-            <?= $task['nb_comments'] ?> <i class="fa fa-comment-o" title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"></i>
+            <i class="fa fa-comment-o" title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"></i><?= $task['nb_comments'] ?>
         <?php endif ?>
 
         <?php if (! empty($task['nb_subtasks'])): ?>
-            <?= $task['completed_subtasks'] ?>/<?= $task['nb_subtasks'] ?> <i class="task-board-tooltip fa fa-check-square-o" title="<?= t('Subtasks') ?>" href='?controller=board&amp;action=getSubtasks&amp;task_id=<?= $task['id'] ?>'></i>
+            <i class="task-board-tooltip fa fa-check-square-o" title="<?= t('Subtasks') ?>" href='?controller=board&amp;action=getSubtasks&amp;task_id=<?= $task['id'] ?>'></i><?= $task['completed_subtasks'] ?>/<?= $task['nb_subtasks'] ?>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
