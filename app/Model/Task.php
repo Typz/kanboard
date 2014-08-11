@@ -5,6 +5,7 @@ namespace Model;
 use SimpleValidator\Validator;
 use SimpleValidator\Validators;
 use DateTime;
+use PDO;
 
 /**
  * Task model
@@ -73,34 +74,40 @@ class Task extends Base
     {
         if ($more) {
 
-            return $this->db
-                    ->table(self::TABLE)
-                    ->columns(
-                        self::TABLE.'.id',
-                        self::TABLE.'.title',
-                        self::TABLE.'.description',
-                        self::TABLE.'.date_creation',
-                        self::TABLE.'.date_completed',
-                        self::TABLE.'.date_due',
-                        self::TABLE.'.color_id',
-                        self::TABLE.'.project_id',
-                        self::TABLE.'.column_id',
-                        self::TABLE.'.owner_id',
-                        self::TABLE.'.position',
-                        self::TABLE.'.is_active',
-                        self::TABLE.'.score',
-                        self::TABLE.'.category_id',
-                        Category::TABLE.'.name AS category_name',
-                        Project::TABLE.'.name AS project_name',
-                        Board::TABLE.'.title AS column_title',
-                        User::TABLE.'.username'
-                    )
-                    ->join(Category::TABLE, 'id', 'category_id')
-                    ->join(Project::TABLE, 'id', 'project_id')
-                    ->join(Board::TABLE, 'id', 'column_id')
-                    ->join(User::TABLE, 'id', 'owner_id')
-                    ->eq(self::TABLE.'.id', $task_id)
-                    ->findOne();
+            $sql = '
+                SELECT
+                tasks.id,
+                tasks.title,
+                tasks.description,
+                tasks.date_creation,
+                tasks.date_completed,
+                tasks.date_modification,
+                tasks.date_due,
+                tasks.color_id,
+                tasks.project_id,
+                tasks.column_id,
+                tasks.owner_id,
+                tasks.creator_id,
+                tasks.position,
+                tasks.is_active,
+                tasks.score,
+                tasks.category_id,
+                project_has_categories.name AS category_name,
+                projects.name AS project_name,
+                columns.title AS column_title,
+                users.username AS assignee_username,
+                creators.username AS creator_username
+                FROM tasks
+                LEFT JOIN users ON users.id = tasks.owner_id
+                LEFT JOIN users AS creators ON creators.id = tasks.creator_id
+                LEFT JOIN project_has_categories ON project_has_categories.id = tasks.category_id
+                LEFT JOIN projects ON projects.id = tasks.project_id
+                LEFT JOIN columns ON columns.id = tasks.column_id
+                WHERE tasks.id = ?
+            ';
+
+            $rq = $this->db->execute($sql, array($task_id));
+            return $rq->fetch(PDO::FETCH_ASSOC);
         }
         else {
 
@@ -163,12 +170,14 @@ class Task extends Base
                         'tasks.title',
                         'tasks.description',
                         'tasks.date_creation',
+                        'tasks.date_modification',
                         'tasks.date_completed',
                         'tasks.date_due',
                         'tasks.color_id',
                         'tasks.project_id',
                         'tasks.column_id',
                         'tasks.owner_id',
+                        'tasks.creator_id',
                         'tasks.position',
                         'tasks.is_active',
                         'tasks.score',
@@ -387,6 +396,7 @@ class Task extends Base
         }
 
         $updated_task = $values;
+        $updated_task['date_modification'] = time();
         unset($updated_task['id']);
 
         $result = $this->db->table(self::TABLE)->eq('id', $values['id'])->update($updated_task);
@@ -516,6 +526,7 @@ class Task extends Base
             new Validators\Required('column_id', t('The column is required')),
             new Validators\Integer('column_id', t('This value must be an integer')),
             new Validators\Integer('owner_id', t('This value must be an integer')),
+            new Validators\Integer('creator_id', t('This value must be an integer')),
             new Validators\Integer('score', t('This value must be an integer')),
             new Validators\Required('title', t('The title is required')),
             new Validators\MaxLength('title', t('The maximum length is %d characters', 200), 200),
@@ -660,5 +671,113 @@ class Task extends Base
             'Y-m-d',
             'Y_m_d',
         );
+    }
+
+    /**
+     * For a given timestamp, reset the date to midnight
+     *
+     * @access public
+     * @param  integer    $timestamp    Timestamp
+     * @return integer
+     */
+    public function resetDateToMidnight($timestamp)
+    {
+        return mktime(0, 0, 0, date('m', $timestamp), date('d', $timestamp), date('Y', $timestamp));
+    }
+
+    /**
+     * Export a list of tasks for a given project and date range
+     *
+     * @access public
+     * @param  integer    $project_id      Project id
+     * @param  mixed      $from            Start date (timestamp or user formatted date)
+     * @param  mixed      $to              End date (timestamp or user formatted date)
+     * @return array
+     */
+    public function export($project_id, $from, $to)
+    {
+        $sql = '
+            SELECT
+            tasks.id,
+            projects.name AS project_name,
+            tasks.is_active,
+            project_has_categories.name AS category_name,
+            columns.title AS column_title,
+            tasks.position,
+            tasks.color_id,
+            tasks.date_due,
+            creators.username AS creator_username,
+            users.username AS assignee_username,
+            tasks.score,
+            tasks.title,
+            tasks.date_creation,
+            tasks.date_modification,
+            tasks.date_completed
+            FROM tasks
+            LEFT JOIN users ON users.id = tasks.owner_id
+            LEFT JOIN users AS creators ON creators.id = tasks.creator_id
+            LEFT JOIN project_has_categories ON project_has_categories.id = tasks.category_id
+            LEFT JOIN columns ON columns.id = tasks.column_id
+            LEFT JOIN projects ON projects.id = tasks.project_id
+            WHERE tasks.date_creation >= ? AND tasks.date_creation <= ? AND tasks.project_id = ?
+        ';
+
+        if (! is_numeric($from)) {
+            $from = $this->resetDateToMidnight($this->parseDate($from));
+        }
+
+        if (! is_numeric($to)) {
+            $to = $this->resetDateToMidnight(strtotime('+1 day', $this->parseDate($to)));
+        }
+
+        $rq = $this->db->execute($sql, array($from, $to, $project_id));
+        $tasks = $rq->fetchAll(PDO::FETCH_ASSOC);
+
+        $columns = array(
+            t('Task Id'),
+            t('Project'),
+            t('Status'),
+            t('Category'),
+            t('Column'),
+            t('Position'),
+            t('Color'),
+            t('Due date'),
+            t('Creator'),
+            t('Assignee'),
+            t('Complexity'),
+            t('Title'),
+            t('Creation date'),
+            t('Modification date'),
+            t('Completion date'),
+        );
+
+        $results = array($columns);
+
+        foreach ($tasks as &$task) {
+            $results[] = array_values($this->formatOutput($task));
+        }
+
+        return $results;
+    }
+
+    /**
+     * Format the output of a task array
+     *
+     * @access public
+     * @param  array     $task    Task properties
+     * @return array
+     */
+    public function formatOutput(array &$task)
+    {
+        $colors = $this->getColors();
+        $task['score'] = $task['score'] ?: '';
+        $task['is_active'] = $task['is_active'] == self::STATUS_OPEN ? t('Open') : t('Closed');
+        $task['color_id'] = $colors[$task['color_id']];
+        $task['date_creation'] = date('Y-m-d', $task['date_creation']);
+        $task['date_due'] = $task['date_due'] ? date('Y-m-d', $task['date_due']) : '';
+        $task['date_modification'] = $task['date_modification'] ? date('Y-m-d', $task['date_modification']) : '';
+        $task['date_completed'] = $task['date_completed'] ? date('Y-m-d', $task['date_completed']) : '';
+
+        return $task;
     }
 }

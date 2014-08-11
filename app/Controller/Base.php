@@ -151,6 +151,7 @@ abstract class Base
         // Attach events
         $this->action->attachEvents();
         $this->project->attachEvents();
+        $this->webhook->attachEvents();
     }
 
     /**
@@ -245,5 +246,26 @@ abstract class Base
         $this->checkProjectPermissions($task['project_id']);
 
         return $task;
+    }
+
+    /**
+     * Common method to get a project
+     *
+     * @access protected
+     * @return array
+     */
+    protected function getProject()
+    {
+        $project_id = $this->request->getIntegerParam('project_id');
+        $project = $this->project->getById($project_id);
+
+        if (! $project) {
+            $this->session->flashError(t('Project not found.'));
+            $this->response->redirect('?controller=project');
+        }
+
+        $this->checkProjectPermissions($project['id']);
+
+        return $project;
     }
 }

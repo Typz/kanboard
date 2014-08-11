@@ -27,6 +27,26 @@ class Translator
     private static $locales = array();
 
     /**
+     * Flag to enable HTML escaping
+     *
+     * @static
+     * @access private
+     * @var boolean
+     */
+    private static $enable_escaping = true;
+
+    /**
+     * Disable HTML escaping for translations
+     *
+     * @static
+     * @access public
+     */
+    public static function disableEscaping()
+    {
+        self::$enable_escaping = false;
+    }
+
+    /**
      * Get a translation
      *
      * $translator->translate('I have %d kids', 5);
@@ -42,8 +62,10 @@ class Translator
         array_shift($args);
         array_unshift($args, $this->get($identifier, $identifier));
 
-        foreach ($args as &$arg) {
-            $arg = htmlspecialchars($arg, ENT_QUOTES, 'UTF-8', false);
+        if (self::$enable_escaping) {
+            foreach ($args as &$arg) {
+                $arg = htmlspecialchars($arg, ENT_QUOTES, 'UTF-8', false);
+            }
         }
 
         return call_user_func_array(
@@ -119,7 +141,6 @@ class Translator
 
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $format = str_replace('%e', '%d', $format);
-            $format = str_replace('%G', '%Y', $format);
             $format = str_replace('%k', '%H', $format);
         }
 

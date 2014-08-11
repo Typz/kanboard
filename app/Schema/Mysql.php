@@ -4,7 +4,19 @@ namespace Schema;
 
 use Core\Security;
 
-const VERSION = 20;
+const VERSION = 22;
+
+function version_22($pdo)
+{
+    $pdo->exec("ALTER TABLE config ADD COLUMN webhooks_url_task_modification VARCHAR(255)");
+    $pdo->exec("ALTER TABLE config ADD COLUMN webhooks_url_task_creation VARCHAR(255)");
+}
+
+function version_21($pdo)
+{
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN creator_id INTEGER DEFAULT '0'");
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN date_modification INTEGER DEFAULT '0'");
+}
 
 function version_20($pdo)
 {
