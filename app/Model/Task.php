@@ -63,6 +63,35 @@ class Task extends Base
     }
 
     /**
+     * Get a list of due tasks for all projects
+     *
+     * @access public
+     * @return array
+     */
+    public function getTasksDue()
+    {
+        $tasks = $this->db->table(self::TABLE)
+                    ->columns(
+                        self::TABLE.'.id',
+                        self::TABLE.'.title',
+                        self::TABLE.'.date_due',
+                        self::TABLE.'.project_id',
+                        Project::TABLE.'.name AS project_name',
+                        User::TABLE.'.username AS assignee_username',
+                        User::TABLE.'.name AS assignee_name'
+                    )
+                    ->join(Project::TABLE, 'id', 'project_id')
+                    ->join(User::TABLE, 'id', 'owner_id')
+                    ->eq(Project::TABLE.'.is_active', 1)
+                    ->eq(self::TABLE.'.is_active', 1)
+                    ->neq(self::TABLE.'.date_due', '')
+                    ->lte(self::TABLE.'.date_due', mktime(23, 59, 59))
+                    ->findAll();
+
+        return $tasks;
+    }
+
+    /**
      * Fetch one task
      *
      * @access public
@@ -96,7 +125,9 @@ class Task extends Base
                 projects.name AS project_name,
                 columns.title AS column_title,
                 users.username AS assignee_username,
-                creators.username AS creator_username
+                users.name AS assignee_name,
+                creators.username AS creator_username,
+                creators.name AS creator_name
                 FROM tasks
                 LEFT JOIN users ON users.id = tasks.owner_id
                 LEFT JOIN users AS creators ON creators.id = tasks.creator_id
@@ -182,9 +213,10 @@ class Task extends Base
                         'tasks.is_active',
                         'tasks.score',
                         'tasks.category_id',
-                        'users.username'
+                        'users.username AS assignee_username',
+                        'users.name AS assignee_name'
                     )
-                    ->join('users', 'id', 'owner_id');
+                    ->join(User::TABLE, 'id', 'owner_id');
 
         foreach ($filters as $key => $filter) {
 
@@ -284,8 +316,6 @@ class Task extends Base
     {
         $this->db->startTransaction();
 
-        $boardModel = new Board($this->db, $this->event);
-
         // Get the original task
         $task = $this->getById($task_id);
 
@@ -298,7 +328,7 @@ class Task extends Base
         $task['owner_id'] = 0;
         $task['category_id'] = 0;
         $task['is_active'] = 1;
-        $task['column_id'] = $boardModel->getFirstColumn($project_id);
+        $task['column_id'] = $this->board->getFirstColumn($project_id);
         $task['project_id'] = $project_id;
         $task['position'] = $this->countByColumnId($task['project_id'], $task['column_id']);
 
@@ -320,6 +350,32 @@ class Task extends Base
     }
 
     /**
+     * Prepare data before task creation or modification
+     *
+     * @access public
+     * @param  array    $values    Form values
+     */
+    public function prepare(array &$values)
+    {
+        if (isset($values['another_task'])) {
+            unset($values['another_task']);
+        }
+
+        if (! empty($values['date_due']) && ! is_numeric($values['date_due'])) {
+            $values['date_due'] = $this->parseDate($values['date_due']);
+        }
+
+        // Force integer fields at 0 (for Postgresql)
+        if (isset($values['date_due']) && empty($values['date_due'])) {
+            $values['date_due'] = 0;
+        }
+
+        if (isset($values['score']) && empty($values['score'])) {
+            $values['score'] = 0;
+        }
+    }
+
+    /**
      * Create a task
      *
      * @access public
@@ -331,22 +387,9 @@ class Task extends Base
         $this->db->startTransaction();
 
         // Prepare data
-        if (isset($values['another_task'])) {
-            unset($values['another_task']);
-        }
-
-        if (! empty($values['date_due']) && ! is_numeric($values['date_due'])) {
-            $values['date_due'] = $this->parseDate($values['date_due']);
-        }
-        else {
-            $values['date_due'] = 0;
-        }
-
-        if (empty($values['score'])) {
-            $values['score'] = 0;
-        }
-
-        $values['date_creation'] = $values['date_modification'] = time();
+        $this->prepare($values);
+        $values['date_creation'] = time();
+        $values['date_modification'] = $values['date_creation'];
         $values['position'] = $this->countByColumnId($values['project_id'], $values['column_id']);
 
         // Save task
@@ -370,69 +413,66 @@ class Task extends Base
      * Update a task
      *
      * @access public
-     * @param  array    $values    Form values
-	 * @param  boolean  $taskMoved Optional flag to indicate the task was explicitely moved (by user)
+     * @param  array    $values            Form values
+     * @param  boolean  $trigger_events    Flag to trigger events
      * @return boolean
      */
-    public function update(array $values, $taskMoved = null)
+    public function update(array $values, $trigger_events = true)
     {
-        // Prepare data
-        if (! empty($values['date_due']) && ! is_numeric($values['date_due'])) {
-            $values['date_due'] = $this->parseDate($values['date_due']);
-        }
-
-        // Force integer fields at 0 (for Postgresql)
-        if (isset($values['date_due']) && empty($values['date_due'])) {
-            $values['date_due'] = 0;
-        }
-
-        if (isset($values['score']) && empty($values['score'])) {
-            $values['score'] = 0;
-        }
-
+        // Fetch original task
         $original_task = $this->getById($values['id']);
 
         if ($original_task === false) {
             return false;
         }
 
+        // Prepare data
+        $this->prepare($values);
         $updated_task = $values;
         unset($updated_task['id']);
-        unset($updated_task['date_modification']);
 
-        //Update 'date_modification' only if significant changes are made
-        //Position may be considered a change only if this specific task was moved by the user
-        foreach ($updated_task as $key => $value) {
-            if (($key != 'position' || $taskMoved == true) && $original_task[$key] != $value)
-                $updated_task['date_modification'] = time();
+        // We update the modification date only for the selected task to highlight recent moves
+        if ($trigger_events) {
+            $updated_task['date_modification'] = time();
         }
 
         $result = $this->db->table(self::TABLE)->eq('id', $values['id'])->update($updated_task);
 
         // Trigger events
-        if ($result) {
-
-            $events = array(
-                self::EVENT_CREATE_UPDATE,
-                self::EVENT_UPDATE,
-            );
-
-            if (isset($values['column_id']) && $original_task['column_id'] != $values['column_id']) {
-                $events[] = self::EVENT_MOVE_COLUMN;
-            }
-            else if (isset($values['position']) && $original_task['position'] != $values['position']) {
-                $events[] = self::EVENT_MOVE_POSITION;
-            }
-
-            $event_data = array_merge($original_task, $values);
-            $event_data['task_id'] = $original_task['id'];
-
-            foreach ($events as $event) {
-                $this->event->trigger($event, $event_data);
-            }
+        if ($result && $trigger_events) {
+            $this->triggerUpdateEvents($original_task, $updated_task);
         }
 
         return $result;
+    }
+
+    /**
+     * Trigger events for task modification
+     *
+     * @access public
+     * @param  array    $original_task    Original task data
+     * @param  array    $updated_task     Updated task data
+     */
+    public function triggerUpdateEvents(array $original_task, array $updated_task)
+    {
+        $events = array(
+            self::EVENT_CREATE_UPDATE,
+            self::EVENT_UPDATE,
+        );
+
+        if (isset($updated_task['column_id']) && $original_task['column_id'] != $updated_task['column_id']) {
+            $events[] = self::EVENT_MOVE_COLUMN;
+        }
+        else if (isset($updated_task['position']) && $original_task['position'] != $updated_task['position']) {
+            $events[] = self::EVENT_MOVE_POSITION;
+        }
+
+        $event_data = array_merge($original_task, $updated_task);
+        $event_data['task_id'] = $original_task['id'];
+
+        foreach ($events as $event) {
+            $this->event->trigger($event, $event_data);
+        }
     }
 
     /**
@@ -492,8 +532,7 @@ class Task extends Base
      */
     public function remove($task_id)
     {
-        $file = new File($this->db, $this->event);
-        $file->removeAll($task_id);
+        $this->file->removeAll($task_id);
 
         return $this->db->table(self::TABLE)->eq('id', $task_id)->remove();
     }
@@ -502,21 +541,23 @@ class Task extends Base
      * Move a task to another column or to another position
      *
      * @access public
-     * @param  integer    $task_id     Task id
-     * @param  integer    $column_id   Column id
-     * @param  integer    $position    Position (must be greater than 1)
-     * @param  boolean    $taskMoved   Indicates this task was moved explicitely. e.g. set to false is the position is modified due to another task being moved.
+     * @param  integer    $task_id           Task id
+     * @param  integer    $column_id         Column id
+     * @param  integer    $position          Position (must be greater than 1)
+     * @param  boolean    $trigger_events    Flag to trigger events
      * @return boolean
      */
-    public function move($task_id, $column_id, $position, $taskMoved = true)
+    public function move($task_id, $column_id, $position, $trigger_events = true)
     {
         $this->event->clearTriggeredEvents();
 
-        return $this->update(array(
+        $values = array(
             'id' => $task_id,
             'column_id' => $column_id,
             'position' => $position,
-        ), $taskMoved);
+        );
+
+        return $this->update($values, $trigger_events);
     }
 
     /**

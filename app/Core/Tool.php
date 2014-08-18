@@ -31,4 +31,14 @@ class Tool
             fclose($fp);
         }
     }
+
+    public static function loadModel(Registry $registry, $name)
+    {
+        if (! isset($registry->$name)) {
+            $class = '\Model\\'.ucfirst($name);
+            $registry->$name = new $class($registry);
+        }
+
+        return $registry->shared($name);
+    }
 }

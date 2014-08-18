@@ -1,5 +1,21 @@
 <?php
 
+// E-mail address for the "From" header (notifications)
+define('MAIL_FROM', 'notifications@kanboard.net');
+
+// Mail transport to use: "smtp", "sendmail" or "mail" (PHP mail function)
+define('MAIL_TRANSPORT', 'mail');
+
+// SMTP configuration to use when the "smtp" transport is chosen
+define('MAIL_SMTP_HOSTNAME', '');
+define('MAIL_SMTP_PORT', 25);
+define('MAIL_SMTP_USERNAME', '');
+define('MAIL_SMTP_PASSWORD', '');
+define('MAIL_SMTP_ENCRYPTION', null); // Valid values are "null", "ssl" or "tls"
+
+// Sendmail command to use when the transport is "sendmail"
+define('MAIL_SENDMAIL_COMMAND', '/usr/sbin/sendmail -bs');
+
 // Auto-refresh frequency in seconds for the public board view (60 seconds by default)
 define('BOARD_PUBLIC_CHECK_INTERVAL', 60);
 
@@ -43,7 +59,7 @@ define('LDAP_USERNAME', null);
 define('LDAP_PASSWORD', null);
 
 // LDAP account base, i.e. root of all user account
-// Example: ou=people,dc=example,dc=com
+// Example: ou=People,dc=example,dc=com
 define('LDAP_ACCOUNT_BASE', '');
 
 // LDAP query pattern to use when searching for a user account
@@ -74,3 +90,12 @@ define('GITHUB_CLIENT_ID', '');
 
 // GitHub client secret key (Copy it from your settings -> Applications -> Developer applications)
 define('GITHUB_CLIENT_SECRET', '');
+
+// Enable/disable the reverse proxy authentication
+define('REVERSE_PROXY_AUTH', false);
+
+// Header name to use for the username
+define('REVERSE_PROXY_USER_HEADER', 'REMOTE_USER');
+
+// Username of the admin, by default blank
+define('REVERSE_PROXY_DEFAULT_ADMIN', '');

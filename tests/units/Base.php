@@ -4,11 +4,27 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
     require __DIR__.'/../../vendor/password.php';
 }
 
+require __DIR__.'/../../vendor/SimpleValidator/Validator.php';
+require __DIR__.'/../../vendor/SimpleValidator/Base.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Required.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Unique.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/MaxLength.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/MinLength.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Integer.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Equals.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/AlphaNumeric.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/GreaterThan.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Date.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Email.php';
+require __DIR__.'/../../vendor/SimpleValidator/Validators/Numeric.php';
+
 require_once __DIR__.'/../../app/Core/Security.php';
 
 require_once __DIR__.'/../../vendor/PicoDb/Database.php';
 require_once __DIR__.'/../../app/Schema/Sqlite.php';
 
+require_once __DIR__.'/../../app/Core/Registry.php';
+require_once __DIR__.'/../../app/Core/Tool.php';
 require_once __DIR__.'/../../app/Core/Listener.php';
 require_once __DIR__.'/../../app/Core/Event.php';
 require_once __DIR__.'/../../app/Core/Translator.php';
@@ -36,8 +52,9 @@ abstract class Base extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $this->db = $this->getDbConnection();
-        $this->event = new \Core\Event;
+        $this->registry = new \Core\Registry;
+        $this->registry->db = $this->getDbConnection();
+        $this->registry->event = new \Core\Event;
     }
 
     public function getDbConnection()

@@ -150,7 +150,7 @@ Kanboard.Board = (function() {
     }
 
     // Save and refresh the board
-    function board_save(movedTaskId)
+    function board_save(selected_task_id)
     {
         var data = [];
         var boardSelector = $("#board");
@@ -173,7 +173,7 @@ Kanboard.Board = (function() {
         $.ajax({
             cache: false,
             url: "?controller=board&action=save&project_id=" + projectId,
-            data: {"positions": data, "csrf_token": boardSelector.attr("data-csrf-token"), "moved_task_id": movedTaskId},
+            data: {"positions": data, "csrf_token": boardSelector.attr("data-csrf-token"), "selected_task_id": selected_task_id},
             type: "POST",
             success: function(data) {
                 $("#board").remove();

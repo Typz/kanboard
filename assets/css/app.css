@@ -265,6 +265,10 @@ input.form-date {
     line-height: 25px;
 }
 
+.form-checkbox-group label {
+    display: inline;
+}
+
 /* alerts */
 .alert {
     padding: 8px 35px 8px 14px;
@@ -580,6 +584,10 @@ a.filter-on {
     padding: 5px;
     font-size: 90%;
     border-radius: 4px;
+}
+
+.task-board-recent {
+    box-shadow: 0px 0px 10px rgba(82, 158, 236, 1);
 }
 
 .task-board-recent {

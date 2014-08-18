@@ -55,10 +55,9 @@ class Project extends Base
     public function getUsersList($project_id, $prepend_unassigned = true, $prepend_everybody = false)
     {
         $allowed_users = $this->getAllowedUsers($project_id);
-        $userModel = new User($this->db, $this->event);
 
         if (empty($allowed_users)) {
-            $allowed_users = $userModel->getList();
+            $allowed_users = $this->user->getList();
         }
 
         if ($prepend_unassigned) {
@@ -81,12 +80,23 @@ class Project extends Base
      */
     public function getAllowedUsers($project_id)
     {
-        return $this->db
+        $users = $this->db
             ->table(self::TABLE_USERS)
             ->join(User::TABLE, 'id', 'user_id')
             ->eq('project_id', $project_id)
             ->asc('username')
-            ->listing('user_id', 'username');
+            ->columns(User::TABLE.'.id', User::TABLE.'.username', User::TABLE.'.name')
+            ->findAll();
+
+        $result = array();
+
+        foreach ($users as $user) {
+            $result[$user['id']] = $user['name'] ?: $user['username'];
+        }
+
+        asort($result);
+
+        return $result;
     }
 
     /**
@@ -103,8 +113,7 @@ class Project extends Base
             'not_allowed' => array(),
         );
 
-        $userModel = new User($this->db, $this->event);
-        $all_users = $userModel->getList();
+        $all_users = $this->user->getList();
 
         $users['allowed'] = $this->getAllowedUsers($project_id);
 
@@ -253,27 +262,23 @@ class Project extends Base
                          ->asc('name')
                          ->findAll();
 
-        $boardModel = new Board($this->db, $this->event);
-        $taskModel = new Task($this->db, $this->event);
-        $aclModel = new Acl($this->db, $this->event);
-
         foreach ($projects as $pkey => &$project) {
 
-            if ($check_permissions && ! $this->isUserAllowed($project['id'], $aclModel->getUserId())) {
+            if ($check_permissions && ! $this->isUserAllowed($project['id'], $this->acl->getUserId())) {
                 unset($projects[$pkey]);
             }
             else {
 
-                $columns = $boardModel->getcolumns($project['id']);
+                $columns = $this->board->getcolumns($project['id']);
                 $project['nb_active_tasks'] = 0;
 
                 foreach ($columns as &$column) {
-                    $column['nb_active_tasks'] = $taskModel->countByColumnId($project['id'], $column['id']);
+                    $column['nb_active_tasks'] = $this->task->countByColumnId($project['id'], $column['id']);
                     $project['nb_active_tasks'] += $column['nb_active_tasks'];
                 }
 
                 $project['columns'] = $columns;
-                $project['nb_tasks'] = $taskModel->countByProjectId($project['id']);
+                $project['nb_tasks'] = $this->task->countByProjectId($project['id']);
                 $project['nb_inactive_tasks'] = $project['nb_tasks'] - $project['nb_active_tasks'];
             }
         }
@@ -378,6 +383,207 @@ class Project extends Base
     }
 
     /**
+     * Create a project from another one.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_id      Project Id
+     * @return integer                     Cloned Project Id
+     */
+    public function createProjectFromAnotherProject($project_id)
+    {
+        // Recover the template project data
+        $project = $this->getById($project_id);
+
+        // Create a Clone project
+        $clone_project = array(
+            'name' => $project['name'].' ('.t('Clone').')',
+            'is_active' => true,
+            'last_modified' => 0,
+            'token' => Security::generateToken(),
+        );
+
+        // Register the cloned project
+        if (! $this->db->table(self::TABLE)->save($clone_project)) {
+            return false;
+        }
+
+        // Get the cloned project Id
+        return $this->db->getConnection()->getLastId();
+    }
+
+    /**
+     * Copy Board Columns from a project to another one.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_from      Project Template
+     * @return integer    $project_to        Project that receives the copy
+     * @return boolean
+     */
+    public function copyBoardFromAnotherProject($project_from, $project_to)
+    {
+        $columns = $this->db->table(Board::TABLE)->eq('project_id', $project_from)->asc('position')->findAllByColumn('title');
+        return $this->board->create($project_to, $columns);
+    }
+
+    /**
+     * Copy Categories from a project to another one.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_from      Project Template
+     * @return integer    $project_to        Project that receives the copy
+     * @return boolean
+     */
+    public function copyCategoriesFromAnotherProject($project_from, $project_to)
+    {
+        $categoriesTemplate = $this->category->getAll($project_from);
+
+        foreach ($categoriesTemplate as $category) {
+
+            unset($category['id']);
+            $category['project_id'] = $project_to;
+
+            if (! $this->category->create($category)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Copy User Access from a project to another one.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_from      Project Template
+     * @return integer    $project_to        Project that receives the copy
+     * @return boolean
+     */
+    public function copyUserAccessFromAnotherProject($project_from, $project_to)
+    {
+        $usersList = $this->getAllowedUsers($project_from);
+
+        foreach ($usersList as $id => $userName) {
+            if (! $this->allowUser($project_to, $id)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Copy Actions and related Actions Parameters from a project to another one.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_from      Project Template
+     * @return integer    $project_to        Project that receives the copy
+     * @return boolean
+     */
+    public function copyActionsFromAnotherProject($project_from, $project_to)
+    {
+        $actionTemplate = $this->action->getAllByProject($project_from);
+
+        foreach ($actionTemplate as $action) {
+
+            unset($action['id']);
+            $action['project_id'] = $project_to;
+            $actionParams = $action['params'];
+            unset($action['params']);
+
+            if (! $this->db->table(Action::TABLE)->save($action)) {
+                return false;
+            }
+
+            $action_clone_id = $this->db->getConnection()->getLastId();
+
+            foreach ($actionParams as $param) {
+                unset($param['id']);
+                $param['value'] = $this->resolveValueParamToClonedAction($param, $project_to);
+                $param['action_id'] = $action_clone_id;
+
+                if (! $this->db->table(Action::TABLE_PARAMS)->save($param)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Resolve type of action value from a project to the respective value in another project.
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $param             A action parameter
+     * @return integer    $project_to        Project to find the corresponding values
+     * @return mixed                         The corresponding values from $project_to
+     */
+    private function resolveValueParamToClonedAction($param, $project_to)
+    {
+        switch($param['name']) {
+            case 'project_id':
+                return $project_to;
+            case 'category_id':
+                $categoryTemplate = $this->category->getById($param['value']);
+                $categoryFromNewProject = $this->db->table(Category::TABLE)->eq('project_id', $project_to)->eq('name', $categoryTemplate['name'])->findOne();
+                return $categoryFromNewProject['id'];
+            case 'column_id':
+                $boardTemplate = $this->board->getColumn($param['value']);
+                $boardFromNewProject = $this->db->table(Board::TABLE)->eq('project_id', $project_to)->eq('title', $boardTemplate['title'])->findOne();
+                return $boardFromNewProject['id'];
+            default:
+                return $param['value'];
+        }
+    }
+
+    /**
+     * Clone a project
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_id  Project Id
+     * @return integer                 Cloned Project Id
+     */
+    public function duplicate($project_id)
+    {
+        $this->db->startTransaction();
+
+        // Get the cloned project Id
+        $clone_project_id = $this->createProjectFromAnotherProject($project_id);
+        if (! $clone_project_id) {
+            $this->db->cancelTransaction();
+            return false;
+        }
+
+        // Clone Board
+        if (! $this->copyBoardFromAnotherProject($project_id, $clone_project_id)) {
+            $this->db->cancelTransaction();
+            return false;
+        }
+
+        // Clone Categories
+        if (! $this->copyCategoriesFromAnotherProject($project_id, $clone_project_id)) {
+            $this->db->cancelTransaction();
+            return false;
+        }
+
+        // Clone Allowed Users
+        if (! $this->copyUserAccessFromAnotherProject($project_id, $clone_project_id)) {
+            $this->db->cancelTransaction();
+            return false;
+        }
+
+        // Clone Actions
+        if (! $this->copyActionsFromAnotherProject($project_id, $clone_project_id)) {
+            $this->db->cancelTransaction();
+            return false;
+        }
+
+        $this->db->closeTransaction();
+
+        return (int) $clone_project_id;
+    }
+
+    /**
      * Create a project
      *
      * @access public
@@ -397,8 +603,7 @@ class Project extends Base
 
         $project_id = $this->db->getConnection()->getLastId();
 
-        $boardModel = new Board($this->db, $this->event);
-        $boardModel->create($project_id, array(
+        $this->board->create($project_id, array(
             t('Backlog'),
             t('Ready'),
             t('Work in progress'),

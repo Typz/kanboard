@@ -2,6 +2,7 @@
 
 namespace Controller;
 
+use Core\Tool;
 use Core\Registry;
 use Core\Security;
 use Core\Translator;
@@ -12,22 +13,21 @@ use Model\LastLogin;
  *
  * @package  controller
  * @author   Frederic Guillot
- * @property \Model\Acl         $acl
- * @property \Model\Action      $action
- * @property \Model\Board       $board
- * @property \Model\Category    $category
- * @property \Model\Comment     $comment
- * @property \Model\Config      $config
- * @property \Model\File        $file
- * @property \Model\Google      $google
- * @property \Model\GitHub      $gitHub
- * @property \Model\LastLogin   $lastLogin
- * @property \Model\Ldap        $ldap
- * @property \Model\Project     $project
- * @property \Model\RememberMe  $rememberMe
- * @property \Model\SubTask     $subTask
- * @property \Model\Task        $task
- * @property \Model\User        $user
+ *
+ * @property \Model\Acl                $acl
+ * @property \Model\Authentication     $authentication
+ * @property \Model\Action             $action
+ * @property \Model\Board              $board
+ * @property \Model\Category           $category
+ * @property \Model\Comment            $comment
+ * @property \Model\Config             $config
+ * @property \Model\File               $file
+ * @property \Model\LastLogin          $lastLogin
+ * @property \Model\Notification       $notification
+ * @property \Model\Project            $project
+ * @property \Model\SubTask            $subTask
+ * @property \Model\Task               $task
+ * @property \Model\User               $user
  */
 abstract class Base
 {
@@ -91,9 +91,7 @@ abstract class Base
      */
     public function __get($name)
     {
-        $class = '\Model\\'.ucfirst($name);
-        $this->registry->$name = new $class($this->registry->shared('db'), $this->registry->shared('event'));
-        return $this->registry->shared($name);
+        return Tool::loadModel($this->registry, $name);
     }
 
     /**
@@ -121,26 +119,8 @@ abstract class Base
         date_default_timezone_set($this->config->get('timezone', 'UTC'));
 
         // Authentication
-        if (! $this->acl->isLogged() && ! $this->acl->isPublicAction($controller, $action)) {
-
-            // Try the remember me authentication first
-            if (! $this->rememberMe->authenticate()) {
-
-                // Redirect to the login form if not authenticated
-                $this->response->redirect('?controller=user&action=login');
-            }
-            else {
-
-                $this->lastLogin->create(
-                    LastLogin::AUTH_REMEMBER_ME,
-                    $this->acl->getUserId(),
-                    $this->user->getIpAddress(),
-                    $this->user->getUserAgent()
-                );
-            }
-        }
-        else if ($this->rememberMe->hasCookie()) {
-            $this->rememberMe->refresh();
+        if (! $this->authentication->isAuthenticated($controller, $action)) {
+            $this->response->redirect('?controller=user&action=login');
         }
 
         // Check if the user is allowed to see this page
@@ -152,6 +132,7 @@ abstract class Base
         $this->action->attachEvents();
         $this->project->attachEvents();
         $this->webhook->attachEvents();
+        $this->notification->attachEvents();
     }
 
     /**

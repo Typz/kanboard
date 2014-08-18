@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Auth;
 
 require __DIR__.'/../../vendor/OAuth/bootstrap.php';
 
@@ -11,13 +11,20 @@ use OAuth\ServiceFactory;
 use OAuth\Common\Http\Exception\TokenResponseException;
 
 /**
- * Google model
+ * Google backend
  *
- * @package  model
+ * @package  auth
  * @author   Frederic Guillot
  */
 class Google extends Base
 {
+    /**
+     * Backend name
+     *
+     * @var string
+     */
+    const AUTH_NAME = 'Google';
+
     /**
      * Authenticate a Google user
      *
@@ -27,21 +34,19 @@ class Google extends Base
      */
     public function authenticate($google_id)
     {
-        $userModel = new User($this->db, $this->event);
-        $user = $userModel->getByGoogleId($google_id);
+        $user = $this->user->getByGoogleId($google_id);
 
         if ($user) {
 
             // Create the user session
-            $userModel->updateSession($user);
+            $this->user->updateSession($user);
 
             // Update login history
-            $lastLogin = new LastLogin($this->db, $this->event);
-            $lastLogin->create(
-                LastLogin::AUTH_GOOGLE,
+            $this->lastLogin->create(
+                self::AUTH_NAME,
                 $user['id'],
-                $userModel->getIpAddress(),
-                $userModel->getUserAgent()
+                $this->user->getIpAddress(),
+                $this->user->getUserAgent()
             );
 
             return true;
@@ -59,9 +64,7 @@ class Google extends Base
      */
     public function unlink($user_id)
     {
-        $userModel = new User($this->db, $this->event);
-
-        return $userModel->update(array(
+        return $this->user->update(array(
             'id' => $user_id,
             'google_id' => '',
         ));
@@ -77,9 +80,7 @@ class Google extends Base
      */
     public function updateUser($user_id, array $profile)
     {
-        $userModel = new User($this->db, $this->event);
-
-        return $userModel->update(array(
+        return $this->user->update(array(
             'id' => $user_id,
             'google_id' => $profile['id'],
             'email' => $profile['email'],

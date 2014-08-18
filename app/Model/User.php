@@ -98,7 +98,52 @@ class User extends Base
      */
     public function getList()
     {
-        return $this->db->table(self::TABLE)->asc('username')->listing('id', 'username');
+        $users = $this->db->table(self::TABLE)->columns('id', 'username', 'name')->findAll();
+
+        $result = array();
+
+        foreach ($users as $user) {
+            $result[$user['id']] = $user['name'] ?: $user['username'];
+        }
+
+        asort($result);
+
+        return $result;
+    }
+
+    /**
+     * Prepare values before an update or a create
+     *
+     * @access public
+     * @param  array    $values    Form values
+     */
+    public function prepare(array &$values)
+    {
+        if (isset($values['password'])) {
+
+            if (! empty($values['password'])) {
+                $values['password'] = \password_hash($values['password'], PASSWORD_BCRYPT);
+            }
+            else {
+                unset($values['password']);
+            }
+        }
+
+        if (isset($values['confirmation'])) {
+            unset($values['confirmation']);
+        }
+
+        if (isset($values['current_password'])) {
+            unset($values['current_password']);
+        }
+
+        if (isset($values['is_admin']) && empty($values['is_admin'])) {
+            $values['is_admin'] = 0;
+        }
+
+        if (isset($values['is_ldap_user']) && empty($values['is_ldap_user'])) {
+            $values['is_ldap_user'] = 0;
+        }
     }
 
     /**
@@ -110,22 +155,7 @@ class User extends Base
      */
     public function create(array $values)
     {
-        if (isset($values['confirmation'])) {
-            unset($values['confirmation']);
-        }
-
-        if (isset($values['password'])) {
-            $values['password'] = \password_hash($values['password'], PASSWORD_BCRYPT);
-        }
-
-        if (empty($values['is_admin'])) {
-            $values['is_admin'] = 0;
-        }
-
-        if (empty($values['is_ldap_user'])) {
-            $values['is_ldap_user'] = 0;
-        }
-
+        $this->prepare($values);
         return $this->db->table(self::TABLE)->save($values);
     }
 
@@ -138,31 +168,10 @@ class User extends Base
      */
     public function update(array $values)
     {
-        if (! empty($values['password'])) {
-            $values['password'] = \password_hash($values['password'], PASSWORD_BCRYPT);
-        }
-        else {
-            unset($values['password']);
-        }
-
-        if (isset($values['confirmation'])) {
-            unset($values['confirmation']);
-        }
-
-        if (isset($values['current_password'])) {
-            unset($values['current_password']);
-        }
-
-        if (empty($values['is_admin'])) {
-            $values['is_admin'] = 0;
-        }
-
-        if (empty($values['is_ldap_user'])) {
-            $values['is_ldap_user'] = 0;
-        }
-
+        $this->prepare($values);
         $result = $this->db->table(self::TABLE)->eq('id', $values['id'])->update($values);
 
+        // If the user is connected refresh his session
         if (session_id() !== '' && $_SESSION['user']['id'] == $values['id']) {
             $this->updateSession();
         }
@@ -309,87 +318,6 @@ class User extends Base
         }
 
         return array(false, $v->getErrors());
-    }
-
-    /**
-     * Validate user login
-     *
-     * @access public
-     * @param  array   $values           Form values
-     * @return array   $valid, $errors   [0] = Success or not, [1] = List of errors
-     */
-    public function validateLogin(array $values)
-    {
-        $v = new Validator($values, array(
-            new Validators\Required('username', t('The username is required')),
-            new Validators\MaxLength('username', t('The maximum length is %d characters', 50), 50),
-            new Validators\Required('password', t('The password is required')),
-        ));
-
-        $result = $v->execute();
-        $errors = $v->getErrors();
-
-        if ($result) {
-
-            list($authenticated, $method) = $this->authenticate($values['username'], $values['password']);
-
-            if ($authenticated === true) {
-
-                // Create the user session
-                $user = $this->getByUsername($values['username']);
-                $this->updateSession($user);
-
-                // Update login history
-                $lastLogin = new LastLogin($this->db, $this->event);
-                $lastLogin->create(
-                    $method,
-                    $user['id'],
-                    $this->getIpAddress(),
-                    $this->getUserAgent()
-                );
-
-                // Setup the remember me feature
-                if (! empty($values['remember_me'])) {
-                    $rememberMe = new RememberMe($this->db, $this->event);
-                    $credentials = $rememberMe->create($user['id'], $this->getIpAddress(), $this->getUserAgent());
-                    $rememberMe->writeCookie($credentials['token'], $credentials['sequence'], $credentials['expiration']);
-                }
-            }
-            else {
-                $result = false;
-                $errors['login'] = t('Bad username or password');
-            }
-        }
-
-        return array(
-            $result,
-            $errors
-        );
-    }
-
-    /**
-     * Authenticate a user
-     *
-     * @access public
-     * @param  string  $username  Username
-     * @param  string  $password  Password
-     * @return array
-     */
-    public function authenticate($username, $password)
-    {
-        // Database authentication
-        $user = $this->db->table(self::TABLE)->eq('username', $username)->eq('is_ldap_user', 0)->findOne();
-        $authenticated = $user && \password_verify($password, $user['password']);
-        $method = LastLogin::AUTH_DATABASE;
-
-        // LDAP authentication
-        if (! $authenticated && LDAP_AUTH) {
-            $ldap = new Ldap($this->db, $this->event);
-            $authenticated = $ldap->authenticate($username, $password);
-            $method = LastLogin::AUTH_LDAP;
-        }
-
-        return array($authenticated, $method);
     }
 
     /**

@@ -20,16 +20,24 @@ class Config extends Base
         $this->response->html($this->template->layout('config_index', array(
             'db_size' => $this->config->getDatabaseSize(),
             'user' => $_SESSION['user'],
-            'projects' => $this->project->getList(),
+            'user_projects' => $this->project->getAvailableList($this->acl->getUserId()),
+            'notifications' => $this->notification->readSettings($this->acl->getUserId()),
             'languages' => $this->config->getLanguages(),
             'values' => $this->config->getAll(),
             'errors' => array(),
             'menu' => 'config',
             'title' => t('Settings'),
             'timezones' => $this->config->getTimezones(),
-            'remember_me_sessions' => $this->rememberMe->getAll($this->acl->getUserId()),
+            'remember_me_sessions' => $this->authentication->backend('rememberMe')->getAll($this->acl->getUserId()),
             'last_logins' => $this->lastLogin->getAll($this->acl->getUserId()),
         )));
+    }
+
+    public function notifications()
+    {
+        $values = $this->request->getValues();
+        $this->notification->saveSettings($this->acl->getUserId(), $values);
+        $this->response->redirect('?controller=config#notifications');
     }
 
     /**
@@ -57,14 +65,15 @@ class Config extends Base
         $this->response->html($this->template->layout('config_index', array(
             'db_size' => $this->config->getDatabaseSize(),
             'user' => $_SESSION['user'],
-            'projects' => $this->project->getList(),
+            'user_projects' => $this->project->getAvailableList($this->acl->getUserId()),
+            'notifications' => $this->notification->readSettings($this->acl->getUserId()),
             'languages' => $this->config->getLanguages(),
             'values' => $values,
             'errors' => $errors,
             'menu' => 'config',
             'title' => t('Settings'),
             'timezones' => $this->config->getTimezones(),
-            'remember_me_sessions' => $this->rememberMe->getAll($this->acl->getUserId()),
+            'remember_me_sessions' => $this->authentication->backend('rememberMe')->getAll($this->acl->getUserId()),
             'last_logins' => $this->lastLogin->getAll($this->acl->getUserId()),
         )));
     }
@@ -115,7 +124,7 @@ class Config extends Base
     public function removeRememberMeToken()
     {
         $this->checkCSRFParam();
-        $this->rememberMe->remove($this->request->getIntegerParam('id'));
+        $this->authentication->backend('rememberMe')->remove($this->request->getIntegerParam('id'));
         $this->response->redirect('?controller=config&action=index#remember-me');
     }
 }
