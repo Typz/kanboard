@@ -60,6 +60,11 @@ h3 {
     font-size: 1.2em;
 }
 
+ul.no-bullet li {
+    list-style-type: none;
+    margin-left: 0;
+}
+
 /* tables */
 table {
     width: 100%;
@@ -103,7 +108,7 @@ td li {
 }
 
 .table-small {
-    font-size: 0.85em;
+    font-size: 0.8em;
 }
 
 .table-hover tr:hover td {
@@ -420,13 +425,16 @@ a.btn-red:hover,
     background: #c53727;
 }
 
+a.btn-blue,
 .btn-blue {
     border-color: #3079ed;
     background: #4d90fe;
     color: #fff;
 }
 
+a.btn-blue:hover,
 .btn-blue:hover,
+a.btn-blue:focus,
 .btn-blue:focus {
     border-color: #2f5bb7;
     background: #357ae8;
@@ -456,6 +464,15 @@ header a {
 nav .active a {
     color: #333;
     font-weight: bold;
+}
+
+.username {
+    color: #000;
+}
+
+.username:hover {
+    color: red;
+    text-decoration: underline;
 }
 
 .logo {
@@ -591,7 +608,7 @@ a.filter-on {
 }
 
 .task-board-recent {
-    box-shadow: 0px 0px 10px rgba(82, 158, 236, 1);
+    box-shadow: 0px 0px 10px rgba(130, 130, 130, 1);
 }
 
 .task-table a,
@@ -688,14 +705,20 @@ a.task-board-nobody {
 }
 
 /* task view */
+.user-show,
+.project-show,
 .task-show {
     position: relative;
 }
 
+.user-show-main,
+.project-show-main,
 .task-show-main {
     margin-left: 330px;
 }
 
+.user-show-sidebar,
+.project-show-sidebar,
 .task-show-sidebar {
     position: absolute;
     left: 0px;
@@ -708,6 +731,8 @@ a.task-board-nobody {
     border-radius: 5px;
 }
 
+.user-show-sidebar li,
+.project-show-sidebar li,
 .task-show-sidebar li {
     list-style-type: square;
     margin-left: 30px;
@@ -982,6 +1007,35 @@ tr td.task-orange,
 .listing ul {
     margin-top: 15px;
     margin-bottom: 15px;
+}
+
+/* project view */
+.project-listing {
+    border-left: 3px solid #000;
+    margin-left: 35px;
+    padding-bottom: 10px;
+    width: 700px;
+}
+
+.project-listing li {
+    font-size: 1.3em;
+    line-height: 1.7em;
+    list-style-type: none;
+    margin-left: 20px;
+    border-bottom: 1px dashed #ccc;
+}
+
+.project-listing li:hover {
+    border-color: #333;
+}
+
+.project-listing a {
+    text-decoration: none;
+}
+
+.project-listing a:hover,
+.project-listing a:focus {
+    color: #000;
 }
 
 /* confirmation box */

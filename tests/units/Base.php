@@ -39,6 +39,7 @@ require_once __DIR__.'/../../app/Model/User.php';
 require_once __DIR__.'/../../app/Model/Board.php';
 require_once __DIR__.'/../../app/Model/Action.php';
 require_once __DIR__.'/../../app/Model/Category.php';
+require_once __DIR__.'/../../app/Model/SubTask.php';
 
 require_once __DIR__.'/../../app/Action/Base.php';
 require_once __DIR__.'/../../app/Action/TaskClose.php';
@@ -47,6 +48,7 @@ require_once __DIR__.'/../../app/Action/TaskAssignColorUser.php';
 require_once __DIR__.'/../../app/Action/TaskAssignColorCategory.php';
 require_once __DIR__.'/../../app/Action/TaskAssignCurrentUser.php';
 require_once __DIR__.'/../../app/Action/TaskDuplicateAnotherProject.php';
+require_once __DIR__.'/../../app/Action/TaskMoveAnotherProject.php';
 
 abstract class Base extends PHPUnit_Framework_TestCase
 {

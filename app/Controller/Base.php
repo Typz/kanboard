@@ -28,6 +28,7 @@ use Model\LastLogin;
  * @property \Model\SubTask            $subTask
  * @property \Model\Task               $task
  * @property \Model\User               $user
+ * @property \Model\Webhook            $webhook
  */
 abstract class Base
 {
@@ -208,6 +209,22 @@ abstract class Base
         $params['task_content_for_layout'] = $content;
 
         return $this->template->layout('task_layout', $params);
+    }
+
+    /**
+     * Common layout for project views
+     *
+     * @access protected
+     * @param  string    $template   Template name
+     * @param  array     $params     Template parameters
+     * @return string
+     */
+    protected function projectLayout($template, array $params)
+    {
+        $content = $this->template->load($template, $params);
+        $params['project_content_for_layout'] = $content;
+
+        return $this->template->layout('project_layout', $params);
     }
 
     /**

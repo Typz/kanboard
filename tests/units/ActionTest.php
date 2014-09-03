@@ -84,7 +84,7 @@ class ActionTest extends Base
         $this->assertEquals(1, $t1['column_id']);
 
         // We move our task
-        $task->move(1, 4, 1);
+        $task->movePosition(1, 4, 1);
 
         $this->assertTrue($this->registry->event->isEventTriggered(Task::EVENT_MOVE_COLUMN));
         $this->assertTrue($this->registry->event->isEventTriggered(Task::EVENT_UPDATE));
@@ -142,29 +142,29 @@ class ActionTest extends Base
 
         // Our task should have the color red and position=0
         $t1 = $task->getById(1);
-        $this->assertEquals(0, $t1['position']);
+        $this->assertEquals(1, $t1['position']);
         $this->assertEquals(1, $t1['is_active']);
         $this->assertEquals('red', $t1['color_id']);
 
         $t1 = $task->getById(2);
-        $this->assertEquals(1, $t1['position']);
+        $this->assertEquals(2, $t1['position']);
         $this->assertEquals(1, $t1['is_active']);
         $this->assertEquals('yellow', $t1['color_id']);
 
         // We move our tasks
-        $task->move(1, 1, 1); // task #1 to position 1
-        $task->move(2, 1, 0); // task #2 to position 0
+        $task->movePosition(1, 1, 2); // task #1 to position 2
+        $task->movePosition(2, 1, 1); // task #2 to position 1
 
         $this->assertTrue($this->registry->event->isEventTriggered(Task::EVENT_MOVE_POSITION));
 
         // Both tasks should be green
         $t1 = $task->getById(1);
-        $this->assertEquals(1, $t1['position']);
+        $this->assertEquals(2, $t1['position']);
         $this->assertEquals(1, $t1['is_active']);
         $this->assertEquals('green', $t1['color_id']);
 
         $t1 = $task->getById(2);
-        $this->assertEquals(0, $t1['position']);
+        $this->assertEquals(1, $t1['position']);
         $this->assertEquals(1, $t1['is_active']);
         $this->assertEquals('green', $t1['color_id']);
     }
@@ -223,7 +223,7 @@ class ActionTest extends Base
         $this->assertEquals(1, $t1['project_id']);
 
         // We move our task
-        $task->move(1, 4, 1);
+        $task->movePosition(1, 4, 1);
 
         $this->assertTrue($this->registry->event->isEventTriggered(Task::EVENT_CLOSE));
         $this->assertTrue($this->registry->event->isEventTriggered(Task::EVENT_MOVE_COLUMN));

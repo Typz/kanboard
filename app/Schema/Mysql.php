@@ -4,7 +4,12 @@ namespace Schema;
 
 use Core\Security;
 
-const VERSION = 23;
+const VERSION = 24;
+
+function version_24($pdo)
+{
+    $pdo->exec("ALTER TABLE projects ADD COLUMN is_public TINYINT(1) DEFAULT '0'");
+}
 
 function version_23($pdo)
 {
@@ -52,7 +57,7 @@ function version_18($pdo)
             status INT DEFAULT 0,
             time_estimated INT DEFAULT 0,
             time_spent INT DEFAULT 0,
-            task_id INT,
+            task_id INT NOT NULL,
             user_id INT,
             PRIMARY KEY (id),
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE

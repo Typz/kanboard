@@ -21,6 +21,19 @@ class Category extends Base
     const TABLE = 'project_has_categories';
 
     /**
+     * Return true if a category exists for a given project
+     *
+     * @access public
+     * @param  integer   $category_id    Category id
+     * @param  integer   $project_id     Project id
+     * @return boolean
+     */
+    public function exists($category_id, $project_id)
+    {
+        return $this->db->table(self::TABLE)->eq('id', $category_id)->eq('project_id', $project_id)->count() > 0;
+    }
+
+    /**
      * Get a category by the id
      *
      * @access public
@@ -115,6 +128,34 @@ class Category extends Base
         $this->db->closeTransaction();
 
         return $r1 && $r2;
+    }
+
+    /**
+     * Duplicate categories from a project to another one
+     *
+     * @author Antonio Rabelo
+     * @param  integer    $project_from      Project Template
+     * @return integer    $project_to        Project that receives the copy
+     * @return boolean
+     */
+    public function duplicate($project_from, $project_to)
+    {
+        $categories = $this->db->table(self::TABLE)
+                               ->columns('name')
+                               ->eq('project_id', $project_from)
+                               ->asc('name')
+                               ->findAll();
+
+        foreach ($categories as $category) {
+
+            $category['project_id'] = $project_to;
+
+            if (! $this->category->create($category)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -31,7 +31,7 @@ Features
 - Host anywhere (shared hosting, VPS, Raspberry Pi or localhost)
 - No external dependencies
 - **Super easy setup**, copy and paste files and you are done!
-- Translations in English, French, Brazilian Portuguese, Spanish, German, Polish, Swedish, Finnish, Chinese...
+- Translations in English, French, Brazilian Portuguese, Spanish, German, Polish, Swedish, Finnish, Italian, Chinese...
 
 Known bugs and feature requests
 -------------------------------
@@ -79,11 +79,17 @@ Documentation
 
 #### Developers and sysadmins
 
+- [Board configuration](docs/board-configuration.markdown)
 - [Email configuration](docs/email-configuration.markdown)
 - [Command line interface](docs/cli.markdown)
 - [Json-RPC API](docs/api-json-rpc.markdown)
 - [Webhooks](docs/webhooks.markdown)
 - [How to use Kanboard with Vagrant](docs/vagrant.markdown)
+
+### Contributors
+
+- [Translations](docs/translations.markdown)
+- [Coding standards](docs/coding-standards.markdown)
 
 The documentation is written in [Markdown](http://en.wikipedia.org/wiki/Markdown).
 If you want to improve the documentation, just send a pull-request.
@@ -101,6 +107,7 @@ Original author: [Frédéric Guillot](http://fredericguillot.com/)
 Contributors:
 
 - Alex Butum: https://github.com/dZkF9RWJT6wN8ux
+- Ashish Kulkarni: https://github.com/ashkulz
 - Claudio Lobo
 - Cmer: https://github.com/chncsu
 - Floaltvater: https://github.com/floaltvater
@@ -112,6 +119,7 @@ Contributors:
 - Levlaz: https://github.com/levlaz
 - Mathgl67: https://github.com/mathgl67
 - Matthieu Keller: https://github.com/maggick
+- Mauro Mariño: https://github.com/moromarino
 - Maxime: https://github.com/EpocDotFr
 - Moraxy: https://github.com/moraxy
 - Nala Ginrut: https://github.com/NalaGinrut
@@ -124,6 +132,7 @@ Contributors:
 - Sebastien pacilly: https://github.com/spacilly
 - Sylvain Veyrié: https://github.com/turb
 - Toomyem: https://github.com/Toomyem
+- Tony G. Bolaño: https://github.com/tonybolanyo
 - Troloo: https://github.com/troloo
 - Typz: https://github.com/Typz
 - Ybarc: https://github.com/ybarc

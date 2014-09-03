@@ -73,7 +73,7 @@
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
-            <a class="task-board-popover" href='?controller=task&amp;action=editDescription&amp;task_id=<?= $task['id'] ?>'><i class="task-board-tooltip fa fa-file-text-o" title="<?= t('Description') ?>" data-content="<?= Helper\escape(Helper\parse($task['description'])) ?>"></i></a>
+            <a class="task-description-popover" href='?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>'><i class="task-board-tooltip fa fa-file-text-o" title="<?= t('Description') ?>" data-href="?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>" data-content="<?= Helper\escape(Helper\parse($task['description'])) ?>"></i></a>
         <?php endif ?>
     </div>
 </div>

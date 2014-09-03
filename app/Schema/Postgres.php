@@ -4,7 +4,12 @@ namespace Schema;
 
 use Core\Security;
 
-const VERSION = 4;
+const VERSION = 5;
+
+function version_5($pdo)
+{
+    $pdo->exec("ALTER TABLE projects ADD COLUMN is_public BOOLEAN DEFAULT '0'");
+}
 
 function version_4($pdo)
 {
@@ -138,7 +143,7 @@ function version_1($pdo)
             status SMALLINT DEFAULT 0,
             time_estimated INTEGER DEFAULT 0,
             time_spent INTEGER DEFAULT 0,
-            task_id INTEGER,
+            task_id INTEGER NOT NULL,
             user_id INTEGER,
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
         );
