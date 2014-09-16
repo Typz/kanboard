@@ -51,39 +51,27 @@ class Board extends Base
      *
      * @access public
      */
-    public function assign()
+    public function changeAssignee()
     {
-        $task = $this->task->getById($this->request->getIntegerParam('task_id'));
+        $task = $this->getTask();
         $project = $this->project->getById($task['project_id']);
-        $projects = $this->project->getListByStatus(ProjectModel::ACTIVE);
-
-        if ($this->acl->isRegularUser()) {
-            $projects = $this->project->filterListByAccess($projects, $this->acl->getUserId());
-        }
-
-        if (! $project) $this->notfound();
-        $this->checkProjectPermissions($project['id']);
+        $projects = $this->project->getAvailableList($this->acl->getUserId());
+        $params = array(
+            'errors' => array(),
+            'values' => $task,
+            'users_list' => $this->project->getUsersList($project['id']),
+            'projects' => $projects,
+            'current_project_id' => $project['id'],
+            'current_project_name' => $project['name'],
+        );
 
         if ($this->request->isAjax()) {
 
-            $this->response->html($this->template->load('board_assign', array(
-                'errors' => array(),
-                'values' => $task,
-                'users_list' => $this->project->getUsersList($project['id']),
-                'projects' => $projects,
-                'current_project_id' => $project['id'],
-                'current_project_name' => $project['name'],
-            )));
+            $this->response->html($this->template->load('board_assignee', $params));
         }
         else {
 
-            $this->response->html($this->template->layout('board_assign', array(
-                'errors' => array(),
-                'values' => $task,
-                'users_list' => $this->project->getUsersList($project['id']),
-                'projects' => $projects,
-                'current_project_id' => $project['id'],
-                'current_project_name' => $project['name'],
+            $this->response->html($this->template->layout('board_assignee', $params + array(
                 'menu' => 'boards',
                 'title' => t('Change assignee').' - '.$task['title'],
             )));
@@ -95,12 +83,66 @@ class Board extends Base
      *
      * @access public
      */
-    public function assignTask()
+    public function updateAssignee()
     {
         $values = $this->request->getValues();
         $this->checkProjectPermissions($values['project_id']);
 
         list($valid,) = $this->task->validateAssigneeModification($values);
+
+        if ($valid && $this->task->update($values)) {
+            $this->session->flash(t('Task updated successfully.'));
+        }
+        else {
+            $this->session->flashError(t('Unable to update your task.'));
+        }
+
+        $this->response->redirect('?controller=board&action=show&project_id='.$values['project_id']);
+    }
+
+    /**
+     * Change a task category directly from the board
+     *
+     * @access public
+     */
+    public function changeCategory()
+    {
+        $task = $this->getTask();
+        $project = $this->project->getById($task['project_id']);
+        $projects = $this->project->getAvailableList($this->acl->getUserId());
+        $params = array(
+            'errors' => array(),
+            'values' => $task,
+            'categories_list' => $this->category->getList($project['id']),
+            'projects' => $projects,
+            'current_project_id' => $project['id'],
+            'current_project_name' => $project['name'],
+        );
+
+        if ($this->request->isAjax()) {
+
+            $this->response->html($this->template->load('board_category', $params));
+        }
+        else {
+
+            $this->response->html($this->template->layout('board_category', $params + array(
+                'menu' => 'boards',
+                'title' => t('Change category').' - '.$task['title'],
+            )));
+        }
+    }
+
+    /**
+     * Validate a category modification
+     *
+     * @access public
+     */
+    public function updateCategory()
+    {
+        $values = $this->request->getValues();
+        $this->checkProjectPermissions($values['project_id']);
+
+        list($valid,) = $this->task->validateCategoryModification($values);
 
         if ($valid && $this->task->update($values)) {
             $this->session->flash(t('Task updated successfully.'));
@@ -125,7 +167,7 @@ class Board extends Base
 
         // Token verification
         if (! $project) {
-            $this->response->text('Not Authorized', 401);
+            $this->forbidden(true);
         }
 
         // Display the board with a specific layout
@@ -146,62 +188,55 @@ class Board extends Base
      */
     public function index()
     {
-        $projects = $this->project->getListByStatus(ProjectModel::ACTIVE);
-        $project_id = 0;
-        $project_name = '';
+        $last_seen_project_id = $this->user->getLastSeenProjectId();
+        $favorite_project_id = $this->user->getFavoriteProjectId();
+        $project_id = $last_seen_project_id ?: $favorite_project_id;
 
-        if ($this->acl->isRegularUser()) {
-            $projects = $this->project->filterListByAccess($projects, $this->acl->getUserId());
-        }
+        if (! $project_id) {
+            $projects = $this->project->getAvailableList($this->acl->getUserId());
 
-        if (empty($projects)) {
+            if (empty($projects)) {
 
-            if ($this->acl->isAdminUser()) {
-                $this->redirectNoProject();
+                if ($this->acl->isAdminUser()) {
+                    $this->redirectNoProject();
+                }
+
+                $this->forbidden();
             }
-            else {
-                $this->response->redirect('?controller=project&action=forbidden');
-            }
-        }
-        else if (! empty($_SESSION['user']['default_project_id']) && isset($projects[$_SESSION['user']['default_project_id']])) {
-            $project_id = $_SESSION['user']['default_project_id'];
-            $project_name = $projects[$_SESSION['user']['default_project_id']];
-        }
-        else {
-            list($project_id, $project_name) = each($projects);
+
+            $project_id = key($projects);
         }
 
-        $this->response->redirect('?controller=board&action=show&project_id='.$project_id);
+        $this->show($project_id);
     }
 
     /**
      * Show a board for a given project
      *
      * @access public
+     * @param  integer   $project_id    Default project id
      */
-    public function show()
+    public function show($project_id = 0)
     {
-        $project_id = $this->request->getIntegerParam('project_id');
-        $user_id = $this->request->getIntegerParam('user_id', UserModel::EVERYBODY_ID);
-
-        $this->checkProjectPermissions($project_id);
+        $project = $this->getProject($project_id);
         $projects = $this->project->getAvailableList($this->acl->getUserId());
 
-        if (! isset($projects[$project_id])) {
-            $this->notfound();
-        }
+        $board_selector = $projects;
+        unset($board_selector[$project['id']]);
+
+        $this->user->storeLastSeenProjectId($project['id']);
 
         $this->response->html($this->template->layout('board_index', array(
-            'users' => $this->project->getUsersList($project_id, true, true),
-            'filters' => array('user_id' => $user_id),
+            'users' => $this->project->getUsersList($project['id'], true, true),
+            'filters' => array('user_id' => UserModel::EVERYBODY_ID),
             'projects' => $projects,
-            'current_project_id' => $project_id,
-            'current_project_name' => $projects[$project_id],
-            'board' => $this->board->get($project_id),
-            'categories' => $this->category->getList($project_id, true, true),
+            'current_project_id' => $project['id'],
+            'current_project_name' => $projects[$project['id']],
+            'board' => $this->board->get($project['id']),
+            'categories' => $this->category->getList($project['id'], true, true),
             'menu' => 'boards',
-            'title' => $projects[$project_id],
-            'board_selector' => $projects,
+            'title' => $projects[$project['id']],
+            'board_selector' => $board_selector,
         )));
     }
 
@@ -280,7 +315,7 @@ class Board extends Base
     public function add()
     {
         $project = $this->getProject();
-        $columns = $this->board->getColumnsList($project_id);
+        $columns = $this->board->getColumnsList($project['id']);
         $data = $this->request->getValues();
         $values = array();
 
@@ -354,27 +389,31 @@ class Board extends Base
      */
     public function save()
     {
-        if ($this->request->isAjax()) {
+        $project_id = $this->request->getIntegerParam('project_id');
 
-            $project_id = $this->request->getIntegerParam('project_id');
+        if ($project_id > 0 && $this->request->isAjax()) {
+
+            if (! $this->project->isUserAllowed($project_id, $this->acl->getUserId())) {
+                $this->response->status(401);
+            }
+
             $values = $this->request->getValues();
 
-            if ($project_id > 0 && ! $this->project->isUserAllowed($project_id, $this->acl->getUserId())) {
-                $this->response->text('Not Authorized', 401);
-            }
+            if ($this->task->movePosition($project_id, $values['task_id'], $values['column_id'], $values['position'])) {
 
-            if (isset($values['positions'])) {
-                $this->board->saveTasksPosition($values['positions'], $values['selected_task_id']);
+                $this->response->html(
+                    $this->template->load('board_show', array(
+                        'current_project_id' => $project_id,
+                        'board' => $this->board->get($project_id),
+                        'categories' => $this->category->getList($project_id, false),
+                    )),
+                    201
+                );
             }
+            else {
 
-            $this->response->html(
-                $this->template->load('board_show', array(
-                    'current_project_id' => $project_id,
-                    'board' => $this->board->get($project_id),
-                    'categories' => $this->category->getList($project_id, false),
-                )),
-                201
-            );
+                $this->response->status(400);
+            }
         }
         else {
             $this->response->status(401);

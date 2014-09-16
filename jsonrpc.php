@@ -1,7 +1,6 @@
 <?php
 
 require __DIR__.'/app/common.php';
-require __DIR__.'/vendor/JsonRPC/Server.php';
 
 use Core\Translator;
 use JsonRPC\Server;
@@ -41,6 +40,7 @@ if ($language !== 'en_US') Translator::load($language);
 $server = new Server;
 $server->authentication(array('jsonrpc' => $config->get('api_token')));
 
+
 /**
  * Project procedures
  */
@@ -62,7 +62,22 @@ $server->register('getAllProjects', function() use ($project) {
     return $project->getAll();
 });
 
-$server->register('updateProject', function(array $values) use ($project) {
+$server->register('updateProject', function($id, $name, $is_active = null, $is_public = null, $token = null) use ($project) {
+
+    $values = array(
+        'id' => $id,
+        'name' => $name,
+        'is_active' => $is_active,
+        'is_public' => $is_public,
+        'token' => $token,
+    );
+
+    foreach ($values as $key => $value) {
+        if (is_null($value)) {
+            unset($values[$key]);
+        }
+    }
+
     list($valid,) = $project->validateModification($values);
     return $valid && $project->update($values);
 });
@@ -71,6 +86,26 @@ $server->register('removeProject', function($project_id) use ($project) {
     return $project->remove($project_id);
 });
 
+$server->register('enableProject', function($project_id) use ($project) {
+    return $project->enable($project_id);
+});
+
+$server->register('disableProject', function($project_id) use ($project) {
+    return $project->disable($project_id);
+});
+
+$server->register('enableProjectPublicAccess', function($project_id) use ($project) {
+    return $project->enablePublicAccess($project_id);
+});
+
+$server->register('disableProjectPublicAccess', function($project_id) use ($project) {
+    return $project->disablePublicAccess($project_id);
+});
+
+
+/**
+ * Board procedures
+ */
 $server->register('getBoard', function($project_id) use ($board) {
     return $board->get($project_id);
 });
@@ -116,7 +151,21 @@ $server->register('allowUser', function($project_id, $user_id) use ($project) {
 /**
  * Task procedures
  */
-$server->register('createTask', function(array $values) use ($task) {
+$server->register('createTask', function($title, $project_id, $color_id = '', $column_id = 0, $owner_id = 0, $creator_id = 0, $date_due = '', $description = '', $category_id = 0, $score = 0) use ($task) {
+
+    $values = array(
+        'title' => $title,
+        'project_id' => $project_id,
+        'color_id' => $color_id,
+        'column_id' => $column_id,
+        'owner_id' => $owner_id,
+        'creator_id' => $creator_id,
+        'date_due' => $date_due,
+        'description' => $description,
+        'category_id' => $category_id,
+        'score' => $score,
+    );
+
     list($valid,) = $task->validateCreation($values);
     return $valid && $task->create($values) !== false;
 });
@@ -125,12 +174,33 @@ $server->register('getTask', function($task_id) use ($task) {
     return $task->getById($task_id);
 });
 
-$server->register('getAllTasks', function($project_id, array $status) use ($task) {
+$server->register('getAllTasks', function($project_id, $status) use ($task) {
     return $task->getAll($project_id, $status);
 });
 
-$server->register('updateTask', function($values) use ($task) {
-    list($valid,) = $task->validateModification($values);
+$server->register('updateTask', function($id, $title = null, $project_id = null, $color_id = null, $column_id = null, $owner_id = null, $creator_id = null, $date_due = null, $description = null, $category_id = null, $score = null) use ($task) {
+
+    $values = array(
+        'id' => $id,
+        'title' => $title,
+        'project_id' => $project_id,
+        'color_id' => $color_id,
+        'column_id' => $column_id,
+        'owner_id' => $owner_id,
+        'creator_id' => $creator_id,
+        'date_due' => $date_due,
+        'description' => $description,
+        'category_id' => $category_id,
+        'score' => $score,
+    );
+
+    foreach ($values as $key => $value) {
+        if (is_null($value)) {
+            unset($values[$key]);
+        }
+    }
+
+    list($valid) = $task->validateModification($values);
     return $valid && $task->update($values);
 });
 
@@ -144,6 +214,10 @@ $server->register('closeTask', function($task_id) use ($task) {
 
 $server->register('removeTask', function($task_id) use ($task) {
     return $task->remove($task_id);
+});
+
+$server->register('moveTaskPosition', function($project_id, $task_id, $column_id, $position) use ($task) {
+    return $task->movePosition($project_id, $task_id, $column_id, $position);
 });
 
 
@@ -176,7 +250,13 @@ $server->register('removeUser', function($user_id) use ($user) {
 /**
  * Category procedures
  */
-$server->register('createCategory', function(array $values) use ($category) {
+$server->register('createCategory', function($project_id, $name) use ($category) {
+
+    $values = array(
+        'project_id' => $project_id,
+        'name' => $name,
+    );
+
     list($valid,) = $category->validateCreation($values);
     return $valid && $category->create($values);
 });
@@ -189,7 +269,13 @@ $server->register('getAllCategories', function($project_id) use ($category) {
     return $category->getAll($project_id);
 });
 
-$server->register('updateCategory', function($values) use ($category) {
+$server->register('updateCategory', function($id, $name) use ($category) {
+
+    $values = array(
+        'id' => $id,
+        'name' => $name,
+    );
+
     list($valid,) = $category->validateModification($values);
     return $valid && $category->update($values);
 });
@@ -228,8 +314,24 @@ $server->register('removeComment', function($comment_id) use ($comment) {
 /**
  * Subtask procedures
  */
-$server->register('createSubtask', function(array $values) use ($subtask) {
-    list($valid,) = $subtask->validate($values);
+$server->register('createSubtask', function($task_id, $title, $user_id = 0, $time_estimated = 0, $time_spent = 0, $status = 0) use ($subtask) {
+
+    $values = array(
+        'title' => $title,
+        'task_id' => $task_id,
+        'user_id' => $user_id,
+        'time_estimated' => $time_estimated,
+        'time_spent' => $time_spent,
+        'status' => $status,
+    );
+
+    foreach ($values as $key => $value) {
+        if (is_null($value)) {
+            unset($values[$key]);
+        }
+    }
+
+    list($valid,) = $subtask->validateCreation($values);
     return $valid && $subtask->create($values);
 });
 
@@ -241,8 +343,25 @@ $server->register('getAllSubtasks', function($task_id) use ($subtask) {
     return $subtask->getAll($task_id);
 });
 
-$server->register('updateSubtask', function($values) use ($subtask) {
-    list($valid,) = $subtask->validate($values);
+$server->register('updateSubtask', function($id, $task_id, $title = null, $user_id = 0, $time_estimated = 0, $time_spent = 0, $status = 0) use ($subtask) {
+
+    $values = array(
+        'id' => $id,
+        'task_id' => $task_id,
+        'title' => $title,
+        'user_id' => $user_id,
+        'time_estimated' => $time_estimated,
+        'time_spent' => $time_spent,
+        'status' => $status,
+    );
+
+    foreach ($values as $key => $value) {
+        if (is_null($value)) {
+            unset($values[$key]);
+        }
+    }
+
+    list($valid,) = $subtask->validateModification($values);
     return $valid && $subtask->update($values);
 });
 

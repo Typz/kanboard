@@ -31,7 +31,7 @@ Features
 - Host anywhere (shared hosting, VPS, Raspberry Pi or localhost)
 - No external dependencies
 - **Super easy setup**, copy and paste files and you are done!
-- Translations in English, French, Brazilian Portuguese, Spanish, German, Polish, Swedish, Finnish, Italian, Chinese...
+- Translations in English, French, Brazilian Portuguese, Spanish, German, Polish, Swedish, Finnish, Italian, Chinese, Russian...
 
 Known bugs and feature requests
 -------------------------------
@@ -58,11 +58,12 @@ Documentation
 #### Installation
 
 - [Installation instructions](docs/installation.markdown)
+- [Upgrade Kanboard to a new version](docs/update.markdown)
 - [Installation on Ubuntu](docs/ubuntu-installation.markdown)
 - [Installation on Debian](docs/debian-installation.markdown)
 - [Installation on Centos](docs/centos-installation.markdown)
-- [Upgrade Kanboard to a new version](docs/update.markdown)
-- [Secure connections (HTTPS)](docs/secure-connections.markdown)
+- [Installation on Windows Server with IIS](docs/windows-iis-installation.markdown)
+- [Example with Nginx + HTTPS + SPDY + PHP-FPM](docs/nginx-ssl-php-fpm.markdown)
 
 #### Database
 
@@ -117,6 +118,7 @@ Contributors:
 - Kiswa: https://github.com/kiswa
 - Kralo: https://github.com/kralo
 - Levlaz: https://github.com/levlaz
+- Lim Yuen Hoe: https://github.com/jasonmoofang
 - Mathgl67: https://github.com/mathgl67
 - Matthieu Keller: https://github.com/maggick
 - Mauro Mariño: https://github.com/moromarino
@@ -124,6 +126,8 @@ Contributors:
 - Moraxy: https://github.com/moraxy
 - Nala Ginrut: https://github.com/NalaGinrut
 - Nekohayo: https://github.com/nekohayo
+- Nramel: https://github.com/nramel
+- Null-Kelvin: https://github.com/Null-Kelvin
 - Olivier Maridat: https://github.com/oliviermaridat
 - Poikilotherm: https://github.com/poikilotherm
 - Rafaelrossa: https://github.com/rafaelrossa
@@ -133,8 +137,10 @@ Contributors:
 - Sylvain Veyrié: https://github.com/turb
 - Toomyem: https://github.com/Toomyem
 - Tony G. Bolaño: https://github.com/tonybolanyo
+- Torsten: https://github.com/misterfu
 - Troloo: https://github.com/troloo
 - Typz: https://github.com/Typz
+- Vedovator: https://github.com/vedovator
 - Ybarc: https://github.com/ybarc
 
 There is also many people who have reported bugs or proposed awesome ideas.

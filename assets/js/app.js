@@ -82,15 +82,24 @@ Kanboard.Board = (function() {
     {
         // Drag and drop
         $(".column").sortable({
+            delay: 300,
+            distance: 5,
             connectWith: ".column",
             placeholder: "draggable-placeholder",
             stop: function(event, ui) {
-                board_save(ui.item.attr('data-task-id'));
+                board_save(
+                    ui.item.attr('data-task-id'),
+                    ui.item.parent().attr("data-column-id"),
+                    ui.item.index() + 1
+                );
             }
         });
 
         // Assignee change
         $(".assignee-popover").click(Kanboard.Popover);
+
+        // Category change
+        $(".category-popover").click(Kanboard.Popover);
 
         // Task edit popover
         $(".task-edit-popover").click(function(e) {
@@ -161,30 +170,22 @@ Kanboard.Board = (function() {
     }
 
     // Save and refresh the board
-    function board_save(selected_task_id)
+    function board_save(taskId, columnId, position)
     {
-        var data = [];
         var boardSelector = $("#board");
         var projectId = boardSelector.attr("data-project-id");
 
         board_unload_events();
 
-        $(".column").each(function() {
-            var columnId = $(this).attr("data-column-id");
-
-            $("#column-" + columnId + " .task-board").each(function(index) {
-                data.push({
-                    "task_id": parseInt($(this).attr("data-task-id")),
-                    "position": index + 1,
-                    "column_id": parseInt(columnId)
-                });
-            });
-        });
-
         $.ajax({
             cache: false,
             url: "?controller=board&action=save&project_id=" + projectId,
-            data: {"positions": data, "csrf_token": boardSelector.attr("data-csrf-token"), "selected_task_id": selected_task_id},
+            data: {
+                "task_id": taskId,
+                "column_id": columnId,
+                "position": position,
+                "csrf_token": boardSelector.attr("data-csrf-token"),
+            },
             type: "POST",
             success: function(data) {
                 $("#board").remove();
@@ -312,7 +313,7 @@ Kanboard.Project = (function() {
 
 // Initialization
 $(function() {
-
+//alert($(window).width());
     if ($("#board").length) {
         Kanboard.Board.Init();
     }

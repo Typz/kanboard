@@ -18,8 +18,9 @@ class Acl extends Base
      */
     private $public_actions = array(
         'user' => array('login', 'check', 'google', 'github'),
-        'task' => array('add'),
+        'task' => array('add', 'readonly'),
         'board' => array('readonly'),
+        'project' => array('feed'),
     );
 
     /**
@@ -30,8 +31,8 @@ class Acl extends Base
      */
     private $user_actions = array(
         'app' => array('index'),
-        'board' => array('index', 'show', 'assign', 'assigntask', 'save', 'check', 'getsubtasks', 'togglesubtask'),
-        'project' => array('tasks', 'index', 'forbidden', 'search', 'export', 'show'),
+        'board' => array('index', 'show', 'save', 'check', 'changeassignee', 'updateassignee', 'changecategory', 'updatecategory', 'getsubtasks', 'togglesubtask'),
+        'project' => array('tasks', 'index', 'forbidden', 'search', 'export', 'show', 'activity'),
         'user' => array('index', 'edit', 'forbidden', 'logout', 'index', 'show', 'external', 'unlinkgoogle', 'unlinkgithub', 'sessions', 'removesession', 'last', 'notifications', 'password'),
         'comment' => array('create', 'save', 'confirm', 'remove', 'update', 'edit', 'forbidden'),
         'file' => array('create', 'save', 'download', 'confirm', 'remove', 'open', 'image'),

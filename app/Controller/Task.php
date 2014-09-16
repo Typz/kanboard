@@ -30,16 +30,12 @@ class Task extends Base
         $values = array(
             'title' => $this->request->getStringParam('title'),
             'description' => $this->request->getStringParam('description'),
-            'color_id' => $this->request->getStringParam('color_id', 'blue'),
+            'color_id' => $this->request->getStringParam('color_id'),
             'project_id' => $this->request->getIntegerParam('project_id', $defaultProject['id']),
             'owner_id' => $this->request->getIntegerParam('owner_id'),
             'column_id' => $this->request->getIntegerParam('column_id'),
             'category_id' => $this->request->getIntegerParam('category_id'),
         );
-
-        if ($values['column_id'] == 0) {
-            $values['column_id'] = $this->board->getFirstColumn($values['project_id']);
-        }
 
         list($valid,) = $this->task->validateCreation($values);
 
@@ -48,6 +44,39 @@ class Task extends Base
         }
 
         $this->response->text('FAILED');
+    }
+
+    /**
+     * Public access (display a task)
+     *
+     * @access public
+     */
+    public function readonly()
+    {
+        $project = $this->project->getByToken($this->request->getStringParam('token'));
+
+        // Token verification
+        if (! $project) {
+            $this->forbidden(true);
+        }
+
+        $task = $this->task->getById($this->request->getIntegerParam('task_id'), true);
+
+        if (! $task) {
+            $this->notfound(true);
+        }
+
+        $this->response->html($this->template->layout('task_public', array(
+            'project' => $project,
+            'comments' => $this->comment->getAll($task['id']),
+            'subtasks' => $this->subTask->getAll($task['id']),
+            'task' => $task,
+            'columns_list' => $this->board->getColumnsList($task['project_id']),
+            'colors_list' => $this->task->getColors(),
+            'title' => $task['title'],
+            'no_layout' => true,
+            'auto_refresh' => true,
+        )));
     }
 
     /**
@@ -60,6 +89,7 @@ class Task extends Base
         $task = $this->getTask();
 
         $this->response->html($this->taskLayout('task_show', array(
+            'project' => $this->project->getById($task['project_id']),
             'files' => $this->file->getAll($task['id']),
             'comments' => $this->comment->getAll($task['id']),
             'subtasks' => $this->subTask->getAll($task['id']),
@@ -168,7 +198,6 @@ class Task extends Base
                 'values' => $task,
                 'errors' => array(),
                 'task' => $task,
-                'columns_list' => $this->board->getColumnsList($task['project_id']),
                 'users_list' => $this->project->getUsersList($task['project_id']),
                 'colors_list' => $this->task->getColors(),
                 'categories_list' => $this->category->getList($task['project_id']),

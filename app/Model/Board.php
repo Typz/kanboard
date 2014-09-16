@@ -21,29 +21,14 @@ class Board extends Base
     const TABLE = 'columns';
 
     /**
-     * Save task positions for each column
+     * Get Kanboard default columns
      *
      * @access public
-     * @param  array    $positions          [['task_id' => X, 'column_id' => X, 'position' => X], ...]
-     * @param  integer  $selected_task_id   The selected task id
-     * @return boolean
+     * @return array
      */
-    public function saveTasksPosition(array $positions, $selected_task_id)
+    public function getDefaultColumns()
     {
-        $this->db->startTransaction();
-
-        foreach ($positions as $value) {
-
-            // We trigger events only for the selected task
-            if (! $this->task->movePosition($value['task_id'], $value['column_id'], $value['position'], $value['task_id'] == $selected_task_id)) {
-                $this->db->cancelTransaction();
-                return false;
-            }
-        }
-
-        $this->db->closeTransaction();
-
-        return true;
+        return array(t('Backlog'), t('Ready'), t('Work in progress'), t('Done'));
     }
 
     /**

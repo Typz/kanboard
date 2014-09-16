@@ -4,7 +4,64 @@ namespace Schema;
 
 use Core\Security;
 
-const VERSION = 24;
+const VERSION = 26;
+
+function version_26($pdo)
+{
+    $pdo->exec("ALTER TABLE config ADD COLUMN default_columns TEXT DEFAULT ''");
+}
+
+function version_25($pdo)
+{
+    $pdo->exec("
+        CREATE TABLE task_has_events (
+            id INTEGER PRIMARY KEY,
+            date_creation INTEGER NOT NULL,
+            event_name TEXT NOT NULL,
+            creator_id INTEGER,
+            project_id INTEGER,
+            task_id INTEGER,
+            data TEXT,
+            FOREIGN KEY(creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+    ");
+
+    $pdo->exec("
+        CREATE TABLE subtask_has_events (
+            id INTEGER PRIMARY KEY,
+            date_creation INTEGER NOT NULL,
+            event_name TEXT NOT NULL,
+            creator_id INTEGER,
+            project_id INTEGER,
+            subtask_id INTEGER,
+            task_id INTEGER,
+            data TEXT,
+            FOREIGN KEY(creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(subtask_id) REFERENCES task_has_subtasks(id) ON DELETE CASCADE,
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+    ");
+
+    $pdo->exec("
+        CREATE TABLE comment_has_events (
+            id INTEGER PRIMARY KEY,
+            date_creation INTEGER NOT NULL,
+            event_name TEXT NOT NULL,
+            creator_id INTEGER,
+            project_id INTEGER,
+            comment_id INTEGER,
+            task_id INTEGER,
+            data TEXT,
+            FOREIGN KEY(creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+    ");
+}
 
 function version_24($pdo)
 {
@@ -45,7 +102,8 @@ function version_20($pdo)
 
 function version_19($pdo)
 {
-    $pdo->exec("ALTER TABLE config ADD COLUMN api_token TEXT DEFAULT '".Security::generateToken()."'");
+    $pdo->exec("ALTER TABLE config ADD COLUMN api_token TEXT DEFAULT ''");
+    $pdo->exec("UPDATE config SET api_token='".Security::generateToken()."'");
 }
 
 function version_18($pdo)
@@ -255,8 +313,8 @@ function version_1($pdo)
 {
     $pdo->exec("
         CREATE TABLE config (
-            language TEXT,
-            webhooks_token TEXT
+            language TEXT DEFAULT 'en_US',
+            webhooks_token TEXT DEFAULT ''
         )
     ");
 
@@ -314,7 +372,7 @@ function version_1($pdo)
 
     $pdo->exec("
         INSERT INTO config
-        (language, webhooks_token)
-        VALUES ('en_US', '".Security::generateToken()."')
+        (webhooks_token)
+        VALUES ('".Security::generateToken()."')
     ");
 }

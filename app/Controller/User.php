@@ -53,7 +53,7 @@ class User extends Base
         list($valid, $errors) = $this->authentication->validateForm($values);
 
         if ($valid) {
-            $this->response->redirect('?controller=app');
+            $this->response->redirect('?controller=board');
         }
 
         $this->response->html($this->template->layout('user_login', array(
@@ -93,7 +93,7 @@ class User extends Base
      */
     private function getUser()
     {
-        $user = $this->user->getById($this->request->getIntegerParam('user_id'), true);
+        $user = $this->user->getById($this->request->getIntegerParam('user_id'));
 
         if (! $user) {
             $this->notfound();

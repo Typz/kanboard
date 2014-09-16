@@ -72,7 +72,6 @@ class Project extends Base
         $to = $this->request->getStringParam('to');
 
         if ($from && $to) {
-            Translator::disableEscaping();
             $data = $this->task->export($project['id'], $from, $to);
             $this->response->forceDownload('Export_'.date('Y_m_d_H_i_S').'.csv');
             $this->response->csv($data);
@@ -404,6 +403,44 @@ class Project extends Base
         }
 
         $this->response->redirect('?controller=project&action=show&project_id='.$project_id);
+    }
+
+    /**
+     * RSS feed for a project
+     *
+     * @access public
+     */
+    public function feed()
+    {
+        $token = $this->request->getStringParam('token');
+        $project = $this->project->getByToken($token);
+
+        // Token verification
+        if (! $project) {
+            $this->forbidden(true);
+        }
+
+        $this->response->xml($this->template->load('project_feed', array(
+            'events' => $this->project->getActivity($project['id']),
+            'project' => $project,
+        )));
+    }
+
+    /**
+     * Activity page for a project
+     *
+     * @access public
+     */
+    public function activity()
+    {
+        $project = $this->getProject();
+
+        $this->response->html($this->template->layout('project_activity', array(
+            'events' => $this->project->getActivity($project['id']),
+            'menu' => 'projects',
+            'project' => $project,
+            'title' => t('%s\'s activity', $project['name'])
+        )));
     }
 
     /**

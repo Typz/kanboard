@@ -93,16 +93,71 @@ Procedures
 ### createProject
 
 - Purpose: **Create a new project**
-- Parameters: **name** (string)
+- Parameters:
+    - **name** (string, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createProject",
+    "id": 1797076613,
+    "params": {
+        "name": "PHP client"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1797076613,
+    "result": true
+}
+```
 
 ### getProjectById
 
 - Purpose: **Get project information**
-- Parameters: **project_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
 - Result on success: **project properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getProjectById",
+    "id": 226760253,
+    "params": {
+        "project_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 226760253,
+    "result": {
+        "id": "1",
+        "name": "API test",
+        "is_active": "1",
+        "token": "",
+        "last_modified": "1410263246",
+        "is_public": "0"
+    }
+}
+```
 
 ### getProjectByName
 
@@ -111,6 +166,36 @@ Procedures
 - Result on success: **project properties**
 - Result on failure: **null**
 
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getProjectByName",
+    "id": 1620253806,
+    "params": {
+        "name": "Test"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1620253806,
+    "result": {
+        "id": "1",
+        "name": "Test",
+        "is_active": "1",
+        "token": "",
+        "last_modified": "0",
+        "is_public": "0"
+    }
+}
+```
+
 ### getAllProjects
 
 - Purpose: **Get all available projects**
@@ -118,20 +203,233 @@ Procedures
 - Result on success: **List of projects**
 - Result on failure: **false**
 
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllProjects",
+    "id": 134982303
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 134982303,
+    "result": [
+        {
+            "id": "2",
+            "name": "PHP client",
+            "is_active": "1",
+            "token": "",
+            "last_modified": "0",
+            "is_public": "0"
+        },
+        {
+            "id": "1",
+            "name": "Test",
+            "is_active": "1",
+            "token": "",
+            "last_modified": "0",
+            "is_public": "0"
+        }
+    ]
+}
+```
+
 ### updateProject
 
 - Purpose: **Update a project**
-- Parameters: Key/value pair composed of the **id** (integer), **name** (string), **is_active** (integer, optional)
+- Parameters:
+    - **id** (integer, required)
+    - **name** (string, required)
+    - **is_active** (integer, optional)
+    - **token** (string, optional)
+    - **is_public** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateProject",
+    "id": 1853996288,
+    "params": {
+        "id": 1,
+        "name": "PHP client update"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1853996288,
+    "result": true
+}
+```
 
 ### removeProject
 
 - Purpose: **Remove a project**
-- Parameters: **project_id** (integer)
+- Parameters:
+    **project_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeProject",
+    "id": 46285125,
+    "params": {
+        "project_id": "2"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 46285125,
+    "result": true
+}
+```
+
+### enableProject
+
+- Purpose: **Enable a project**
+- Parameters:
+    - **project_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "enableProject",
+    "id": 1775494839,
+    "params": [
+        "1"
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1775494839,
+    "result": true
+}
+```
+
+### disableProject
+
+- Purpose: **Disable a project**
+- Parameters:
+    - **project_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "disableProject",
+    "id": 1734202312,
+    "params": [
+        "1"
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1734202312,
+    "result": true
+}
+```
+
+### enableProjectPublicAccess
+
+- Purpose: **Enable public access for a given project**
+- Parameters:
+    - **project_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "enableProjectPublicAccess",
+    "id": 103792571,
+    "params": [
+        "1"
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 103792571,
+    "result": true
+}
+```
+
+### disableProjectPublicAccess
+
+- Purpose: **Disable public access for a given project**
+- Parameters:
+    - **project_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "disableProjectPublicAccess",
+    "id": 942472945,
+    "params": [
+        "1"
+    ]
+}
+```
+
+Response example:
+
+```json
+
+    "jsonrpc": "2.0",
+    "id": 942472945,
+    "result": true
+}
+```
 
 
 
@@ -211,54 +509,342 @@ Procedures
 ### createTask
 
 - Purpose: **Create a new task**
-- Parameters: Key/value pair composed of the **title** (string), **description** (string, optional), **color_id** (string), **project_id** (integer), **column_id** (integer), **owner_id** (integer, optional), **score** (integer, optional), **date_due** (integer, optional), **category_id** (integer, optional)
+- Parameters:
+    - **title** (string, required)
+    - **project_id** (integer, required)
+    - **color_id** (string, optional)
+    - **column_id** (integer, optional)
+    - **description** (string, optional)
+    - **owner_id** (integer, optional)
+    - **creator_id** (integer, optional)
+    - **score** (integer, optional)
+    - **date_due**: ISO8601 format (string, optional)
+    - **category_id** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createTask",
+    "id": 1176509098,
+    "params": {
+        "owner_id": 1,
+        "creator_id": 0,
+        "date_due": "",
+        "description": "",
+        "category_id": 0,
+        "score": 0,
+        "title": "Test",
+        "project_id": 1,
+        "color_id": "green",
+        "column_id": 2
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1176509098,
+    "result": true
+}
+```
 
 ### getTask
 
 - Purpose: **Get task information**
-- Parameters: **task_id** (integer)
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **task properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getTask",
+    "id": 700738119,
+    "params": {
+        "task_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 700738119,
+    "result": {
+        "id": "1",
+        "title": "Task #1",
+        "description": "",
+        "date_creation": "1409963206",
+        "color_id": "blue",
+        "project_id": "1",
+        "column_id": "2",
+        "owner_id": "1",
+        "position": "1",
+        "is_active": "1",
+        "date_completed": null,
+        "score": "0",
+        "date_due": "0",
+        "category_id": "0",
+        "creator_id": "0",
+        "date_modification": "1409963206"
+    }
+}
+```
 
 ### getAllTasks
 
 - Purpose: **Get all available tasks**
-- Parameters: **project_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
+    - **status**: The value 1 for active tasks and 0 for inactive (integer, required)
 - Result on success: **List of tasks**
 - Result on failure: **false**
+
+Request example to fetch all tasks on the board:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllTasks",
+    "id": 133280317,
+    "params": {
+        "project_id": 1,
+        "status": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 133280317,
+    "result": [
+        {
+            "id": "1",
+            "title": "Task #1",
+            "description": "",
+            "date_creation": "1409961789",
+            "color_id": "blue",
+            "project_id": "1",
+            "column_id": "2",
+            "owner_id": "1",
+            "position": "1",
+            "is_active": "1",
+            "date_completed": null,
+            "score": "0",
+            "date_due": "0",
+            "category_id": "0",
+            "creator_id": "0",
+            "date_modification": "1409961789"
+        },
+        {
+            "id": "2",
+            "title": "Test",
+            "description": "",
+            "date_creation": "1409962115",
+            "color_id": "green",
+            "project_id": "1",
+            "column_id": "2",
+            "owner_id": "1",
+            "position": "2",
+            "is_active": "1",
+            "date_completed": null,
+            "score": "0",
+            "date_due": "0",
+            "category_id": "0",
+            "creator_id": "0",
+            "date_modification": "1409962115"
+        },
+        ...
+    ]
+}
+```
 
 ### updateTask
 
 - Purpose: **Update a task**
-- Parameters: Key/value pair composed of the **id** (integer), **title** (string), **description** (string, optional), **color_id** (string), **project_id** (integer), **column_id** (integer), **owner_id** (integer, optional), **score** (integer, optional), **date_due** (integer, optional), **category_id** (integer, optional)
+- Parameters:
+    - **id** (integer, required)
+    - **title** (string, optional)
+    - **color_id** (string, optional)
+    - **project_id** (integer, optional)
+    - **column_id** (integer, optional)
+    - **description** (string, optional)
+    - **owner_id** (integer, optional)
+    - **creator_id** (integer, optional)
+    - **score** (integer, optional)
+    - **date_due**: ISO8601 format (string, optional)
+    - **category_id** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example to change the task color:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateTask",
+    "id": 1406803059,
+    "params": {
+        "id": 1,
+        "color_id": "blue"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1406803059,
+    "result": true
+}
+```
 
 ### openTask
 
 - Purpose: **Set a task to the status open**
-- Parameters: **task_id** (integer)
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "openTask",
+    "id": 1888531925,
+    "params": {
+        "task_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1888531925,
+    "result": true
+}
+```
 
 ### closeTask
 
 - Purpose: **Set a task to the status close**
-- Parameters: **task_id** (integer)
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "closeTask",
+    "id": 1654396960,
+    "params": {
+        "task_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1654396960,
+    "result": true
+}
+```
 
 ### removeTask
 
 - Purpose: **Remove a task**
-- Parameters: **task_id** (integer)
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 
+Request example:
 
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeTask",
+    "id": 1423501287,
+    "params": {
+        "task_id": 1
+    }
+}
+```
 
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1423501287,
+    "result": true
+}
+```
+
+### moveTaskPosition
+
+- Purpose: **Move a task to another column or another position**
+- Parameters:
+    - **project_id** (integer, required)
+    - **task_id** (integer, required)
+    - **column_id** (integer, required)
+    - **position** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "moveTaskPosition",
+    "id": 117211800,
+    "params": {
+        "project_id": 1,
+        "task_id": 1,
+        "column_id": 2,
+        "position": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 117211800,
+    "result": true
+}
+```
 
 ### createUser
 
@@ -301,39 +887,172 @@ Procedures
 ### createCategory
 
 - Purpose: **Create a new category**
-- Parameters: Key/value pair composed of the **name** (string), **project_id** (integer)
+- Parameters:
+- **project_id** (integer, required)
+    - **name** (string, required, must unique for the given project)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createCategory",
+    "id": 541909890,
+    "params": {
+        "name": "Super category",
+        "project_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 541909890,
+    "result": true
+}
+```
 
 ### getCategory
 
 - Purpose: **Get category information**
-- Parameters: **category_id** (integer)
+- Parameters:
+    - **category_id** (integer, required)
 - Result on success: **category properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getCategory",
+    "id": 203539163,
+    "params": {
+        "category_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+
+    "jsonrpc": "2.0",
+    "id": 203539163,
+    "result": {
+        "id": "1",
+        "name": "Super category",
+        "project_id": "1"
+    }
+}
+```
 
 ### getAllCategories
 
 - Purpose: **Get all available categories**
-- Parameters: **project_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
 - Result on success: **List of categories**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllCategories",
+    "id": 1261777968,
+    "params": {
+        "project_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+
+    "jsonrpc": "2.0",
+    "id": 1261777968,
+    "result": [
+        {
+            "id": "1",
+            "name": "Super category",
+            "project_id": "1"
+        }
+    ]
+}
+```
 
 ### updateCategory
 
 - Purpose: **Update a category**
-- Parameters: Key/value pair composed of the **id** (integer), **name** (string), **project_id** (integer)
+- Parameters:
+    - **id** (integer, required)
+    - **name** (string, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateCategory",
+    "id": 570195391,
+    "params": {
+        "id": 1,
+        "name": "Renamed category"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 570195391,
+    "result": true
+}
+```
 
 ### removeCategory
 
 - Purpose: **Remove a category**
-- Parameters: **category_id** (integer)
+- Parameters:
+    - **category_id** (integer)
 - Result on success: **true**
 - Result on failure: **false**
 
+Request example:
 
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeCategory",
+    "id": 88225706,
+    "params": {
+        "category_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 88225706,
+    "result": true
+}
+```
 
 
 ### createComment
@@ -377,34 +1096,181 @@ Procedures
 ### createSubtask
 
 - Purpose: **Create a new subtask**
-- Parameters: Key/value pair composed of the **title** (integer), time_estimated (int, optional), task_id (int), user_id (int, optional)
+- Parameters:
+    - **task_id** (integer, required)
+    - **title** (integer, required)
+    - **assignee_id** (int, optional)
+    - **time_estimated** (int, optional)
+    - **time_spent** (int, optional)
+    - **status** (int, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createSubtask",
+    "id": 2041554661,
+    "params": {
+        "task_id": 1,
+        "title": "Subtask #1"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 2041554661,
+    "result": true
+}
+```
 
 ### getSubtask
 
 - Purpose: **Get subtask information**
-- Parameters: **subtask_id** (integer)
+- Parameters:
+    - **subtask_id** (integer)
 - Result on success: **subtask properties**
 - Result on failure: **null**
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getSubtask",
+    "id": 133184525,
+    "params": {
+        "subtask_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 133184525,
+    "result": {
+        "id": "1",
+        "title": "Subtask #1",
+        "status": "0",
+        "time_estimated": "0",
+        "time_spent": "0",
+        "task_id": "1",
+        "user_id": "0"
+    }
+}
+```
 
 ### getAllSubtasks
 
 - Purpose: **Get all available subtasks**
-- Parameters: **none**
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **List of subtasks**
 - Result on failure: **false**
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllSubtasks",
+    "id": 2087700490,
+    "params": {
+        "task_id": 1
+    }
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 2087700490,
+    "result": [
+        {
+            "id": "1",
+            "title": "Subtask #1",
+            "status": "0",
+            "time_estimated": "0",
+            "time_spent": "0",
+            "task_id": "1",
+            "user_id": "0",
+            "username": null,
+            "name": null,
+            "status_name": "Todo"
+        },
+        ...
+    ]
+}
+```
 
 ### updateSubtask
 
 - Purpose: **Update a subtask**
-- Parameters: Key/value pair composed of the **id** (integer), **title** (integer), status (integer, optional) time_estimated (int, optional), time_spent (int, optional), task_id (int), user_id (int, optional)
+- Parameters:
+    - **id** (integer, required)
+    - **task_id** (integer, required)
+    - **title** (integer, optional)
+    - **assignee_id** (integer, optional)
+    - **time_estimated (integer, optional)
+    - **time_spent** (integer, optional)
+    - **status** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateSubtask",
+    "id": 191749979,
+    "params": {
+        "id": 1,
+        "task_id": 1,
+        "status": 1,
+        "time_spent": 5,
+        "user_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 191749979,
+    "result": true
+}
+```
 
 ### removeSubtask
 
 - Purpose: **Remove a subtask**
-- Parameters: **subtask_id** (integer)
+- Parameters:
+    **subtask_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeSubtask",
+    "id": 1382487306,
+    "params": {
+        "subtask_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1382487306,
+    "result": true
+}
+```

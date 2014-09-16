@@ -150,16 +150,16 @@ class Task extends Base
      * Count all tasks for a given project and status
      *
      * @access public
-     * @param  integer   $project_id   Project id
-     * @param  array     $status       List of status id
+     * @param  integer   $project_id      Project id
+     * @param  integer   $status_id       Status id
      * @return array
      */
-    public function getAll($project_id, array $status = array(self::STATUS_OPEN, self::STATUS_CLOSED))
+    public function getAll($project_id, $status_id = self::STATUS_OPEN)
     {
         return $this->db
                     ->table(self::TABLE)
                     ->eq('project_id', $project_id)
-                    ->in('is_active', $status)
+                    ->eq('is_active', $status_id)
                     ->findAll();
     }
 
@@ -196,7 +196,7 @@ class Task extends Base
                         '(SELECT count(*) FROM comments WHERE task_id=tasks.id) AS nb_comments',
                         '(SELECT count(*) FROM task_has_files WHERE task_id=tasks.id) AS nb_files',
                         '(SELECT count(*) FROM task_has_subtasks WHERE task_id=tasks.id) AS nb_subtasks',
-                        '(SELECT count(*) FROM task_has_subtasks WHERE task_id=tasks.id AND status=2) AS completed_subtasks',
+                        '(SELECT count(*) FROM task_has_subtasks WHERE task_id=tasks.id AND status=2) AS nb_completed_subtasks',
                         'tasks.id',
                         'tasks.title',
                         'tasks.description',
@@ -382,6 +382,10 @@ class Task extends Base
         if (isset($values['score']) && empty($values['score'])) {
             $values['score'] = 0;
         }
+
+        if (isset($values['is_active'])) {
+            $values['is_active'] = (int) $values['is_active'];
+        }
     }
 
     /**
@@ -397,6 +401,16 @@ class Task extends Base
 
         // Prepare data
         $this->prepare($values);
+
+        if (empty($values['column_id'])) {
+            $values['column_id'] = $this->board->getFirstColumn($values['project_id']);
+        }
+
+        if (empty($values['color_id'])) {
+            $colors = $this->getColors();
+            $values['color_id'] = key($colors);
+        }
+
         $values['date_creation'] = time();
         $values['date_modification'] = $values['date_creation'];
         $values['position'] = $this->countByColumnId($values['project_id'], $values['column_id']) + 1;
@@ -423,36 +437,28 @@ class Task extends Base
      *
      * @access public
      * @param  array    $values            Form values
-     * @param  boolean  $trigger_events    Flag to trigger events
      * @return boolean
      */
-    public function update(array $values, $trigger_events = true)
+    public function update(array $values)
     {
         // Fetch original task
         $original_task = $this->getById($values['id']);
 
-        if ($original_task === false) {
+        if (! $original_task) {
             return false;
         }
 
         // Prepare data
         $this->prepare($values);
         $updated_task = $values;
+        $updated_task['date_modification'] = time();
         unset($updated_task['id']);
 
-        // We update the modification date only for the selected task to highlight recent moves
-        if ($trigger_events) {
-            $updated_task['date_modification'] = time();
-        }
-
-        $result = $this->db->table(self::TABLE)->eq('id', $values['id'])->update($updated_task);
-
-        // Trigger events
-        if ($result && $trigger_events) {
+        if ($this->db->table(self::TABLE)->eq('id', $values['id'])->update($updated_task)) {
             $this->triggerUpdateEvents($original_task, $updated_task);
         }
 
-        return $result;
+        return true;
     }
 
     /**
@@ -464,16 +470,17 @@ class Task extends Base
      */
     public function triggerUpdateEvents(array $original_task, array $updated_task)
     {
-        $events = array(
-            self::EVENT_CREATE_UPDATE,
-            self::EVENT_UPDATE,
-        );
+        $events = array();
 
         if (isset($updated_task['column_id']) && $original_task['column_id'] != $updated_task['column_id']) {
             $events[] = self::EVENT_MOVE_COLUMN;
         }
         else if (isset($updated_task['position']) && $original_task['position'] != $updated_task['position']) {
             $events[] = self::EVENT_MOVE_POSITION;
+        }
+        else {
+            $events[] = self::EVENT_CREATE_UPDATE;
+            $events[] = self::EVENT_UPDATE;
         }
 
         $event_data = array_merge($original_task, $updated_task);
@@ -485,6 +492,18 @@ class Task extends Base
     }
 
     /**
+     * Return true if the project exists
+     *
+     * @access public
+     * @param  integer    $task_id   Task id
+     * @return boolean
+     */
+    public function exists($task_id)
+    {
+        return $this->db->table(self::TABLE)->eq('id', $task_id)->count() === 1;
+    }
+
+    /**
      * Mark a task closed
      *
      * @access public
@@ -493,6 +512,10 @@ class Task extends Base
      */
     public function close($task_id)
     {
+        if (! $this->exists($task_id)) {
+            return false;
+        }
+
         $result = $this->db
                         ->table(self::TABLE)
                         ->eq('id', $task_id)
@@ -517,12 +540,16 @@ class Task extends Base
      */
     public function open($task_id)
     {
+        if (! $this->exists($task_id)) {
+            return false;
+        }
+
         $result = $this->db
                         ->table(self::TABLE)
                         ->eq('id', $task_id)
                         ->update(array(
                             'is_active' => 1,
-                            'date_completed' => ''
+                            'date_completed' => 0
                         ));
 
         if ($result) {
@@ -541,6 +568,10 @@ class Task extends Base
      */
     public function remove($task_id)
     {
+        if (! $this->exists($task_id)) {
+            return false;
+        }
+
         $this->file->removeAll($task_id);
 
         return $this->db->table(self::TABLE)->eq('id', $task_id)->remove();
@@ -550,23 +581,92 @@ class Task extends Base
      * Move a task to another column or to another position
      *
      * @access public
+     * @param  integer    $project_id        Project id
      * @param  integer    $task_id           Task id
      * @param  integer    $column_id         Column id
-     * @param  integer    $position          Position (must be greater than 1)
-     * @param  boolean    $trigger_events    Flag to trigger events
+     * @param  integer    $position          Position (must be >= 1)
      * @return boolean
      */
-    public function movePosition($task_id, $column_id, $position, $trigger_events = true)
+    public function movePosition($project_id, $task_id, $column_id, $position)
     {
-        $this->event->clearTriggeredEvents();
+        // The position can't be lower than 1
+        if ($position < 1) {
+            return false;
+        }
 
-        $values = array(
-            'id' => $task_id,
-            'column_id' => $column_id,
-            'position' => $position,
-        );
+        $board = $this->db->table(Board::TABLE)->eq('project_id', $project_id)->asc('position')->findAllByColumn('id');
+        $columns = array();
 
-        return $this->update($values, $trigger_events);
+        // Prepare the columns
+        foreach ($board as $board_column_id) {
+
+            $columns[$board_column_id] = $this->db->table(self::TABLE)
+                          ->eq('is_active', 1)
+                          ->eq('project_id', $project_id)
+                          ->eq('column_id', $board_column_id)
+                          ->neq('id', $task_id)
+                          ->asc('position')
+                          ->findAllByColumn('id');
+        }
+
+        // The column must exists
+        if (! isset($columns[$column_id])) {
+            return false;
+        }
+
+        // We put our task to the new position
+        array_splice($columns[$column_id], $position - 1, 0, $task_id); // print_r($columns);
+
+        // We save the new positions for all tasks
+        return $this->savePositions($task_id, $columns);
+    }
+
+    /**
+     * Save task positions
+     *
+     * @access private
+     * @param  integer     $moved_task_id    Id of the moved task
+     * @param  array       $columns          Sorted tasks
+     * @return boolean
+     */
+    private function savePositions($moved_task_id, array $columns)
+    {
+        $this->db->startTransaction();
+
+        foreach ($columns as $column_id => $column) {
+
+            $position = 1;
+
+            foreach ($column as $task_id) {
+
+                if ($task_id == $moved_task_id) {
+
+                    // Events will be triggered only for that task
+                    $result = $this->update(array(
+                        'id' => $task_id,
+                        'position' => $position,
+                        'column_id' => $column_id
+                    ));
+                }
+                else {
+                    $result = $this->db->table(self::TABLE)->eq('id', $task_id)->update(array(
+                        'position' => $position,
+                        'column_id' => $column_id
+                    ));
+                }
+
+                $position++;
+
+                if (! $result) {
+                    $this->db->cancelTransaction();
+                    return false;
+                }
+            }
+        }
+
+        $this->db->closeTransaction();
+
+        return true;
     }
 
     /**
@@ -603,6 +703,27 @@ class Task extends Base
     }
 
     /**
+     * Common validation rules
+     *
+     * @access private
+     * @return array
+     */
+    private function commonValidationRules()
+    {
+        return array(
+            new Validators\Integer('id', t('This value must be an integer')),
+            new Validators\Integer('project_id', t('This value must be an integer')),
+            new Validators\Integer('column_id', t('This value must be an integer')),
+            new Validators\Integer('owner_id', t('This value must be an integer')),
+            new Validators\Integer('creator_id', t('This value must be an integer')),
+            new Validators\Integer('score', t('This value must be an integer')),
+            new Validators\Integer('category_id', t('This value must be an integer')),
+            new Validators\MaxLength('title', t('The maximum length is %d characters', 200), 200),
+            new Validators\Date('date_due', t('Invalid date'), $this->getDateFormats()),
+        );
+    }
+
+    /**
      * Validate task creation
      *
      * @access public
@@ -611,19 +732,12 @@ class Task extends Base
      */
     public function validateCreation(array $values)
     {
-        $v = new Validator($values, array(
-            new Validators\Required('color_id', t('The color is required')),
+        $rules = array(
             new Validators\Required('project_id', t('The project is required')),
-            new Validators\Integer('project_id', t('This value must be an integer')),
-            new Validators\Required('column_id', t('The column is required')),
-            new Validators\Integer('column_id', t('This value must be an integer')),
-            new Validators\Integer('owner_id', t('This value must be an integer')),
-            new Validators\Integer('creator_id', t('This value must be an integer')),
-            new Validators\Integer('score', t('This value must be an integer')),
             new Validators\Required('title', t('The title is required')),
-            new Validators\MaxLength('title', t('The maximum length is %d characters', 200), 200),
-            new Validators\Date('date_due', t('Invalid date'), $this->getDateFormats()),
-        ));
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -640,11 +754,12 @@ class Task extends Base
      */
     public function validateDescriptionCreation(array $values)
     {
-        $v = new Validator($values, array(
+        $rules = array(
             new Validators\Required('id', t('The id is required')),
-            new Validators\Integer('id', t('This value must be an integer')),
             new Validators\Required('description', t('The description is required')),
-        ));
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -661,20 +776,11 @@ class Task extends Base
      */
     public function validateModification(array $values)
     {
-        $v = new Validator($values, array(
+        $rules = array(
             new Validators\Required('id', t('The id is required')),
-            new Validators\Integer('id', t('This value must be an integer')),
-            new Validators\Required('color_id', t('The color is required')),
-            new Validators\Required('project_id', t('The project is required')),
-            new Validators\Integer('project_id', t('This value must be an integer')),
-            new Validators\Required('column_id', t('The column is required')),
-            new Validators\Integer('column_id', t('This value must be an integer')),
-            new Validators\Integer('owner_id', t('This value must be an integer')),
-            new Validators\Integer('score', t('This value must be an integer')),
-            new Validators\Required('title', t('The title is required')),
-            new Validators\MaxLength('title', t('The maximum length is %d characters', 200), 200),
-            new Validators\Date('date_due', t('Invalid date'), $this->getDateFormats()),
-        ));
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -691,14 +797,37 @@ class Task extends Base
      */
     public function validateAssigneeModification(array $values)
     {
-        $v = new Validator($values, array(
+        $rules = array(
             new Validators\Required('id', t('The id is required')),
-            new Validators\Integer('id', t('This value must be an integer')),
             new Validators\Required('project_id', t('The project is required')),
-            new Validators\Integer('project_id', t('This value must be an integer')),
             new Validators\Required('owner_id', t('This value is required')),
-            new Validators\Integer('owner_id', t('This value must be an integer')),
-        ));
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
+
+        return array(
+            $v->execute(),
+            $v->getErrors()
+        );
+    }
+
+    /**
+     * Validate category change
+     *
+     * @access public
+     * @param  array   $values           Form values
+     * @return array   $valid, $errors   [0] = Success or not, [1] = List of errors
+     */
+    public function validateCategoryModification(array $values)
+    {
+        $rules = array(
+            new Validators\Required('id', t('The id is required')),
+            new Validators\Required('project_id', t('The project is required')),
+            new Validators\Required('category_id', t('This value is required')),
+
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -715,12 +844,12 @@ class Task extends Base
      */
     public function validateProjectModification(array $values)
     {
-        $v = new Validator($values, array(
+        $rules = array(
             new Validators\Required('id', t('The id is required')),
-            new Validators\Integer('id', t('This value must be an integer')),
             new Validators\Required('project_id', t('The project is required')),
-            new Validators\Integer('project_id', t('This value must be an integer')),
-        ));
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -848,21 +977,21 @@ class Task extends Base
         $tasks = $rq->fetchAll(PDO::FETCH_ASSOC);
 
         $columns = array(
-            t('Task Id'),
-            t('Project'),
-            t('Status'),
-            t('Category'),
-            t('Column'),
-            t('Position'),
-            t('Color'),
-            t('Due date'),
-            t('Creator'),
-            t('Assignee'),
-            t('Complexity'),
-            t('Title'),
-            t('Creation date'),
-            t('Modification date'),
-            t('Completion date'),
+            e('Task Id'),
+            e('Project'),
+            e('Status'),
+            e('Category'),
+            e('Column'),
+            e('Position'),
+            e('Color'),
+            e('Due date'),
+            e('Creator'),
+            e('Assignee'),
+            e('Complexity'),
+            e('Title'),
+            e('Creation date'),
+            e('Modification date'),
+            e('Completion date'),
         );
 
         $results = array($columns);
@@ -885,7 +1014,7 @@ class Task extends Base
     {
         $colors = $this->getColors();
         $task['score'] = $task['score'] ?: '';
-        $task['is_active'] = $task['is_active'] == self::STATUS_OPEN ? t('Open') : t('Closed');
+        $task['is_active'] = $task['is_active'] == self::STATUS_OPEN ? e('Open') : e('Closed');
         $task['color_id'] = $colors[$task['color_id']];
         $task['date_creation'] = date('Y-m-d', $task['date_creation']);
         $task['date_due'] = $task['date_due'] ? date('Y-m-d', $task['date_due']) : '';

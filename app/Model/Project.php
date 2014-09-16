@@ -496,14 +496,19 @@ class Project extends Base
         }
 
         $project_id = $this->db->getConnection()->getLastId();
+        $column_names = explode(',', $this->config->get('default_columns', implode(',', $this->board->getDefaultColumns())));
+        $columns = array();
 
-        $this->board->create($project_id, array(
-            array('title' => t('Backlog'), 'task_limit' => 0),
-            array('title' => t('Ready'), 'task_limit' => 0),
-            array('title' => t('Work in progress'), 'task_limit' => 0),
-            array('title' => t('Done'), 'task_limit' => 0),
-        ));
+        foreach ($column_names as $column_name) {
 
+            $column_name = trim($column_name);
+
+            if (! empty($column_name)) {
+                $columns[] = array('title' => $column_name, 'task_limit' => 0);
+            }
+        }
+
+        $this->board->create($project_id, $columns);
         $this->db->closeTransaction();
 
         return (int) $project_id;
@@ -548,7 +553,8 @@ class Project extends Base
      */
     public function update(array $values)
     {
-        return $this->db->table(self::TABLE)->eq('id', $values['id'])->save($values);
+        return $this->exists($values['id']) &&
+               $this->db->table(self::TABLE)->eq('id', $values['id'])->save($values);
     }
 
     /**
@@ -564,6 +570,18 @@ class Project extends Base
     }
 
     /**
+     * Return true if the project exists
+     *
+     * @access public
+     * @param  integer    $project_id   Project id
+     * @return boolean
+     */
+    public function exists($project_id)
+    {
+        return $this->db->table(self::TABLE)->eq('id', $project_id)->count() === 1;
+    }
+
+    /**
      * Enable a project
      *
      * @access public
@@ -572,10 +590,11 @@ class Project extends Base
      */
     public function enable($project_id)
     {
-        return $this->db
+        return $this->exists($project_id) &&
+               $this->db
                     ->table(self::TABLE)
                     ->eq('id', $project_id)
-                    ->save(array('is_active' => 1));
+                    ->update(array('is_active' => 1));
     }
 
     /**
@@ -587,10 +606,11 @@ class Project extends Base
      */
     public function disable($project_id)
     {
-        return $this->db
+        return $this->exists($project_id) &&
+               $this->db
                     ->table(self::TABLE)
                     ->eq('id', $project_id)
-                    ->save(array('is_active' => 0));
+                    ->update(array('is_active' => 0));
     }
 
     /**
@@ -602,7 +622,8 @@ class Project extends Base
      */
     public function enablePublicAccess($project_id)
     {
-        return $this->db
+        return $this->exists($project_id) &&
+               $this->db
                     ->table(self::TABLE)
                     ->eq('id', $project_id)
                     ->save(array('is_public' => 1, 'token' => Security::generateToken()));
@@ -617,10 +638,28 @@ class Project extends Base
      */
     public function disablePublicAccess($project_id)
     {
-        return $this->db
+        return $this->exists($project_id) &&
+               $this->db
                     ->table(self::TABLE)
                     ->eq('id', $project_id)
                     ->save(array('is_public' => 0, 'token' => ''));
+    }
+
+    /**
+     * Common validation rules
+     *
+     * @access private
+     * @return array
+     */
+    private function commonValidationRules()
+    {
+        return array(
+            new Validators\Integer('id', t('This value must be an integer')),
+            new Validators\Integer('is_active', t('This value must be an integer')),
+            new Validators\Required('name', t('The project name is required')),
+            new Validators\MaxLength('name', t('The maximum length is %d characters', 50), 50),
+            new Validators\Unique('name', t('This project must be unique'), $this->db->getConnection(), self::TABLE),
+        );
     }
 
     /**
@@ -632,11 +671,7 @@ class Project extends Base
      */
     public function validateCreation(array $values)
     {
-        $v = new Validator($values, array(
-            new Validators\Required('name', t('The project name is required')),
-            new Validators\MaxLength('name', t('The maximum length is %d characters', 50), 50),
-            new Validators\Unique('name', t('This project must be unique'), $this->db->getConnection(), self::TABLE)
-        ));
+        $v = new Validator($values, $this->commonValidationRules());
 
         return array(
             $v->execute(),
@@ -653,14 +688,11 @@ class Project extends Base
      */
     public function validateModification(array $values)
     {
-        $v = new Validator($values, array(
-            new Validators\Required('id', t('The project id is required')),
-            new Validators\Integer('id', t('This value must be an integer')),
-            new Validators\Required('name', t('The project name is required')),
-            new Validators\MaxLength('name', t('The maximum length is %d characters', 50), 50),
-            new Validators\Unique('name', t('This project must be unique'), $this->db->getConnection(), self::TABLE),
-            new Validators\Integer('is_active', t('This value must be an integer'))
-        ));
+        $rules = array(
+            new Validators\Required('id', t('This value is required')),
+        );
+
+        $v = new Validator($values, array_merge($rules, $this->commonValidationRules()));
 
         return array(
             $v->execute(),
@@ -709,5 +741,36 @@ class Project extends Base
         foreach ($events as $event_name) {
             $this->event->attach($event_name, $listener);
         }
+    }
+
+    /**
+     * Get project activity
+     *
+     * @access public
+     * @param  integer   $project_id   Project id
+     * @return array
+     */
+    public function getActivity($project_id)
+    {
+        $activity = array();
+        $tasks = $this->taskHistory->getAllContentByProjectId($project_id, 25);
+        $comments = $this->commentHistory->getAllContentByProjectId($project_id, 25);
+        $subtasks = $this->subtaskHistory->getAllContentByProjectId($project_id, 25);
+
+        foreach ($tasks as &$task) {
+            $activity[$task['date_creation'].'-'.$task['id']] = $task;
+        }
+
+        foreach ($subtasks as &$subtask) {
+            $activity[$subtask['date_creation'].'-'.$subtask['id']] = $subtask;
+        }
+
+        foreach ($comments as &$comment) {
+            $activity[$comment['date_creation'].'-'.$comment['id']] = $comment;
+        }
+
+        krsort($activity);
+
+        return $activity;
     }
 }
