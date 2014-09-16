@@ -133,11 +133,11 @@ Kanboard.Board = (function() {
             }
         }).on("mouseenter", function () {
             var _this = this;
-              $(this).tooltip("open");
+            $(this).tooltip("open");
             $(".ui-tooltip").on("mouseleave", function () {
                 $(_this).tooltip('close');
             });
-        }).on("mouseout focusout", function (e) {
+        }).on("mouseleave focusout", function (e) {
             e.stopImmediatePropagation();
 
             var _this = this;
