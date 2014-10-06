@@ -1,6 +1,17 @@
 <?php if (isset($not_editable)): ?>
 
+    <div class="task-header">
+
     <a href="?controller=task&amp;action=readonly&amp;task_id=<?= $task['id'] ?>&amp;token=<?= $project['token'] ?>">#<?= $task['id'] ?></a> -
+
+    <span class="task-board-category-container">
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category"><?= Helper\in_list($task['category_id'], $categories) ?></span>
+        <?php endif ?>
+	</span>
 
     <span class="task-board-user">
     <?php if (! empty($task['owner_id'])): ?>
@@ -10,13 +21,6 @@
     <?php endif ?>
     </span>
 
-    <div class="task-board-category-container">
-        <?php if ($task['score']): ?>
-            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-        <?php endif ?>
-        <?php if ($task['category_id']): ?>
-            <span class="task-board-category"><?= Helper\in_list($task['category_id'], $categories) ?></span>
-        <?php endif ?>
     </div>
 
     <div class="task-board-title">
@@ -27,7 +31,22 @@
 
 <?php else: ?>
 
+    <div  class="task-header">
+
     <a class="task-edit-popover" href="?controller=task&amp;action=edit&amp;task_id=<?= $task['id'] ?>" title="<?= t('Edit this task') ?>">#<?= $task['id'] ?></a> -
+
+    <span class="task-board-category-container">
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category">
+                <a class="category-popover" href="?controller=board&amp;action=changeCategory&amp;task_id=<?= $task['id'] ?>" title="<?= t('Change category') ?>">
+                    <?= Helper\in_list($task['category_id'], $categories) ?>
+                </a>
+            </span>
+        <?php endif ?>
+	</span>
 
     <span class="task-board-user">
         <a class="assignee-popover" href="?controller=board&amp;action=changeAssignee&amp;task_id=<?= $task['id'] ?>" title="<?= t('Change assignee') ?>">
@@ -39,17 +58,6 @@
         </a>
     </span>
 
-    <div class="task-board-category-container">
-        <?php if ($task['score']): ?>
-            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-        <?php endif ?>
-        <?php if ($task['category_id']): ?>
-            <span class="task-board-category">
-                <a class="category-popover" href="?controller=board&amp;action=changeCategory&amp;task_id=<?= $task['id'] ?>" title="<?= t('Change category') ?>">
-                    <?= Helper\in_list($task['category_id'], $categories) ?>
-                </a>
-            </span>
-        <?php endif ?>
     </div>
 
     <div class="task-board-title">

@@ -667,10 +667,8 @@ a.task-board-nobody {
 
 .task-board-category-container {
     text-align: right;
-	position: absolute;
     padding-bottom: 2px;
-	right: 3px;
-	top: 3px;
+	float: right;
 }
 
 .task-board-category {
@@ -682,6 +680,7 @@ a.task-board-nobody {
     padding: 2px;
     padding-right: 5px;
     padding-left: 5px;
+	vertical-align: middle;
 }
 
 .task-board-footer {
@@ -723,7 +722,7 @@ a.task-board-nobody {
 .task-board .task-score {
     text-align: left;
     font-size: 1.5em;
-	vertical-align: top;
+	vertical-align: middle;
 	line-height: 0.9em;
 }
 
