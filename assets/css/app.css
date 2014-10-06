@@ -693,7 +693,7 @@ a.task-board-nobody {
 
 .task-board-date {
     position: absolute;
-    bottom: 0;
+    bottom: 2px;
     left: 5px;
     font-weight: bold;
     color: #000;
@@ -705,7 +705,7 @@ a.task-board-nobody {
 
 .task-board-icons {
     position: absolute;
-    bottom: 0;
+    bottom: 2px;
     right: 5px;
 }
 
