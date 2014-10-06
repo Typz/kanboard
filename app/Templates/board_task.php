@@ -2,7 +2,15 @@
 
     <div class="task-header">
 
-    <a href="?controller=task&amp;action=readonly&amp;task_id=<?= $task['id'] ?>&amp;token=<?= $project['token'] ?>">#<?= $task['id'] ?></a> -
+    <a href="?controller=task&amp;action=readonly&amp;task_id=<?= $task['id'] ?>&amp;token=<?= $project['token'] ?>">#<?= $task['id'] ?></a>
+
+    <?php if ($task['reference']): ?>
+    <span class="task-board-reference" title="<?= t('Reference') ?>">
+        (<?= $task['reference'] ?>)
+    </span>
+    <?php endif ?>
+
+    &nbsp;-&nbsp;
 
     <span class="task-board-category-container">
         <?php if ($task['score']): ?>
@@ -33,7 +41,15 @@
 
     <div  class="task-header">
 
-    <a class="task-edit-popover" href="?controller=task&amp;action=edit&amp;task_id=<?= $task['id'] ?>" title="<?= t('Edit this task') ?>">#<?= $task['id'] ?></a> -
+    <a class="task-edit-popover" href="?controller=task&amp;action=edit&amp;task_id=<?= $task['id'] ?>" title="<?= t('Edit this task') ?>">#<?= $task['id'] ?></a>
+
+    <?php if ($task['reference']): ?>
+    <span class="task-board-reference" title="<?= t('Reference') ?>">
+        (<?= $task['reference'] ?>)
+    </span>
+    <?php endif ?>
+
+    &nbsp;-&nbsp;
 
     <span class="task-board-category-container">
         <?php if ($task['score']): ?>
@@ -90,7 +106,7 @@
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
-            <span title="<?= t('Description') ?>" class="task-board-tooltip" data-content="<?= Helper\escape(Helper\parse($task['description'])) ?>">
+            <span title="<?= t('Description') ?>" class="task-board-tooltip" data-content="<?= Helper\escape(Helper\markdown($task['description'])) ?>">
             <?php if (! isset($not_editable)): ?>
                 <a class="task-description-popover" href="?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>"><i class="fa fa-file-text-o" data-href="?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>"></i></a>
             <?php else: ?>

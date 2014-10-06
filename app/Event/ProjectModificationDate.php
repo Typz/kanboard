@@ -35,6 +35,17 @@ class ProjectModificationDate implements Listener
     }
 
     /**
+     * Return class information
+     *
+     * @access public
+     * @return string
+     */
+    public function __toString()
+    {
+        return get_called_class();
+    }
+
+    /**
      * Execute the action
      *
      * @access public
@@ -44,8 +55,7 @@ class ProjectModificationDate implements Listener
     public function execute(array $data)
     {
         if (isset($data['project_id'])) {
-            $this->project->updateModificationDate($data['project_id']);
-            return true;
+            return $this->project->updateModificationDate($data['project_id']);
         }
 
         return false;

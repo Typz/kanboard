@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use Core\Session;
 use Core\Translator;
 use Core\Template;
 use Event\TaskNotificationListener;
@@ -30,15 +31,22 @@ class Notification extends Base
      * Get the list of users to send the notification for a given project
      *
      * @access public
-     * @param  integer   $project_id   Project id
+     * @param  integer   $project_id     Project id
+     * @param  array     $exlude_users   List of user_id to exclude
      * @return array
      */
-    public function getUsersList($project_id)
+    public function getUsersList($project_id, array $exclude_users = array())
     {
+        // Exclude the connected user
+        if (Session::isOpen()) {
+            $exclude_users[] = $this->acl->getUserId();
+        }
+
         $users = $this->db->table(User::TABLE)
                           ->columns('id', 'username', 'name', 'email')
                           ->eq('notifications_enabled', '1')
                           ->neq('email', '')
+                          ->notin('id', $exclude_users)
                           ->findAll();
 
         foreach ($users as $index => $user) {
@@ -79,6 +87,9 @@ class Notification extends Base
         $this->event->attach(Task::EVENT_UPDATE, new TaskNotificationListener($this, 'notification_task_update'));
         $this->event->attach(Task::EVENT_CLOSE, new TaskNotificationListener($this, 'notification_task_close'));
         $this->event->attach(Task::EVENT_OPEN, new TaskNotificationListener($this, 'notification_task_open'));
+        $this->event->attach(Task::EVENT_MOVE_COLUMN, new TaskNotificationListener($this, 'notification_task_move_column'));
+        $this->event->attach(Task::EVENT_MOVE_POSITION, new TaskNotificationListener($this, 'notification_task_move_position'));
+        $this->event->attach(Task::EVENT_ASSIGNEE_CHANGE, new TaskNotificationListener($this, 'notification_task_assignee_change'));
     }
 
     /**
@@ -97,7 +108,6 @@ class Notification extends Base
         $message = Swift_Message::newInstance()
                         ->setSubject($this->getMailSubject($template, $data))
                         ->setFrom(array(MAIL_FROM => 'Kanboard'))
-                        //->setTo(array($user['email'] => $user['name']))
                         ->setBody($this->getMailContent($template, $data), 'text/html');
 
         foreach ($users as $user) {
@@ -143,6 +153,15 @@ class Notification extends Base
             case 'notification_task_open':
                 $subject = e('[%s][Task opened] %s (#%d)', $data['task']['project_name'], $data['task']['title'], $data['task']['id']);
                 break;
+            case 'notification_task_move_column':
+                $subject = e('[%s][Column Change] %s (#%d)', $data['task']['project_name'], $data['task']['title'], $data['task']['id']);
+                break;
+            case 'notification_task_move_position':
+                $subject = e('[%s][Position Change] %s (#%d)', $data['task']['project_name'], $data['task']['title'], $data['task']['id']);
+                break;
+            case 'notification_task_assignee_change':
+                $subject = e('[%s][Assignee Change] %s (#%d)', $data['task']['project_name'], $data['task']['title'], $data['task']['id']);
+                break;
             case 'notification_task_due':
                 $subject = e('[%s][Due tasks]', $data['project']);
                 break;
@@ -163,7 +182,7 @@ class Notification extends Base
     public function getMailContent($template, array $data)
     {
         $tpl = new Template;
-        return $tpl->load($template, $data);
+        return $tpl->load($template, $data + array('application_url' => $this->config->get('application_url')));
     }
 
     /**

@@ -4,11 +4,109 @@ require_once __DIR__.'/Base.php';
 
 use Model\Task;
 use Model\Project;
+use Model\ProjectPermission;
 use Model\Category;
 use Model\User;
 
 class TaskTest extends Base
 {
+    public function testPrepareCreation()
+    {
+        $t = new Task($this->registry);
+        $p = new Project($this->registry);
+
+        $this->assertEquals(1, $p->create(array('name' => 'Project #1')));
+
+        $input = array(
+            'title' => 'youpi',
+            'description' => '',
+            'project_id' => '1',
+            'owner_id' => '0',
+            'category_id' => '0',
+            'column_id' => '2',
+            'color_id' => 'yellow',
+            'score' => '',
+            'date_due' => '',
+            'creator_id' => '1',
+            'another_task' => '1',
+        );
+
+        $t->prepareCreation($input);
+
+        $this->assertInternalType('integer', $input['date_due']);
+        $this->assertEquals(0, $input['date_due']);
+
+        $this->assertInternalType('integer', $input['score']);
+        $this->assertEquals(0, $input['score']);
+
+        $this->assertArrayNotHasKey('another_task', $input);
+
+        $this->assertArrayHasKey('date_creation', $input);
+        $this->assertEquals(time(), $input['date_creation']);
+
+        $this->assertArrayHasKey('date_modification', $input);
+        $this->assertEquals(time(), $input['date_modification']);
+
+        $this->assertArrayHasKey('position', $input);
+        $this->assertGreaterThan(0, $input['position']);
+
+        $input = array(
+            'title' => 'youpi',
+            'project_id' => '1',
+        );
+
+        $t->prepareCreation($input);
+
+        $this->assertArrayNotHasKey('date_due', $input);
+        $this->assertArrayNotHasKey('score', $input);
+
+        $this->assertArrayHasKey('date_creation', $input);
+        $this->assertEquals(time(), $input['date_creation']);
+
+        $this->assertArrayHasKey('date_modification', $input);
+        $this->assertEquals(time(), $input['date_modification']);
+
+        $this->assertArrayHasKey('position', $input);
+        $this->assertGreaterThan(0, $input['position']);
+
+        $this->assertArrayHasKey('color_id', $input);
+        $this->assertEquals('yellow', $input['color_id']);
+
+        $this->assertArrayHasKey('column_id', $input);
+        $this->assertEquals(1, $input['column_id']);
+
+        $input = array(
+            'title' => 'youpi',
+            'project_id' => '1',
+            'date_due' => '2014-09-15',
+        );
+
+        $t->prepareCreation($input);
+
+        $this->assertArrayHasKey('date_due', $input);
+        $this->assertInternalType('integer', $input['date_due']);
+        $this->assertEquals('2014-09-15', date('Y-m-d', $input['date_due']));
+    }
+
+    public function testPrepareModification()
+    {
+        $t = new Task($this->registry);
+        $p = new Project($this->registry);
+
+        $this->assertEquals(1, $p->create(array('name' => 'Project #1')));
+
+        $input = array(
+            'id' => '1',
+            'description' => 'Boo',
+        );
+
+        $t->prepareModification($input);
+
+        $this->assertArrayNotHasKey('id', $input);
+        $this->assertArrayHasKey('date_modification', $input);
+        $this->assertEquals(time(), $input['date_modification']);
+    }
+
     public function testCreation()
     {
         $t = new Task($this->registry);
@@ -24,6 +122,7 @@ class TaskTest extends Base
         $this->assertEquals('yellow', $task['color_id']);
         $this->assertEquals(time(), $task['date_creation']);
         $this->assertEquals(time(), $task['date_modification']);
+        $this->assertEquals(0, $task['date_due']);
 
         $this->assertEquals(2, $t->create(array('title' => 'Task #2', 'project_id' => 1)));
 
@@ -33,6 +132,7 @@ class TaskTest extends Base
         $this->assertEquals(2, $task['position']);
         $this->assertEquals(time(), $task['date_creation']);
         $this->assertEquals(time(), $task['date_modification']);
+        $this->assertEquals(0, $task['date_due']);
 
         $tasks = $t->getAll(1, 1);
         $this->assertNotEmpty($tasks);
@@ -54,6 +154,24 @@ class TaskTest extends Base
 
         $this->assertTrue($t->remove(1));
         $this->assertFalse($t->remove(1234));
+    }
+
+    public function testGetOverdueTasks()
+    {
+        $t = new Task($this->registry);
+        $p = new Project($this->registry);
+
+        $this->assertEquals(1, $p->create(array('name' => 'Project #1')));
+        $this->assertEquals(1, $t->create(array('title' => 'Task #1', 'project_id' => 1, 'date_due' => strtotime('-1 day'))));
+        $this->assertEquals(2, $t->create(array('title' => 'Task #2', 'project_id' => 1, 'date_due' => strtotime('+1 day'))));
+        $this->assertEquals(3, $t->create(array('title' => 'Task #3', 'project_id' => 1, 'date_due' => 0)));
+        $this->assertEquals(4, $t->create(array('title' => 'Task #3', 'project_id' => 1)));
+
+        $tasks = $t->getOverdueTasks();
+        $this->assertNotEmpty($tasks);
+        $this->assertTrue(is_array($tasks));
+        $this->assertEquals(1, count($tasks));
+        $this->assertEquals('Task #1', $tasks[0]['title']);
     }
 
     public function testMoveTaskWithColumnThatNotChange()
@@ -375,41 +493,6 @@ class TaskTest extends Base
         $this->assertEquals($task_per_column + 1, $t->countByColumnId(1, 4));
     }
 
-    public function testExport()
-    {
-        $t = new Task($this->registry);
-        $p = new Project($this->registry);
-        $c = new Category($this->registry);
-
-        $this->assertEquals(1, $p->create(array('name' => 'Export Project')));
-        $this->assertNotFalse($c->create(array('name' => 'Category #1', 'project_id' => 1)));
-        $this->assertNotFalse($c->create(array('name' => 'Category #2', 'project_id' => 1)));
-        $this->assertNotFalse($c->create(array('name' => 'Category #3', 'project_id' => 1)));
-
-        for ($i = 1; $i <= 100; $i++) {
-
-            $task = array(
-                'title' => 'Task #'.$i,
-                'project_id' => 1,
-                'column_id' => rand(1, 3),
-                'creator_id' => rand(0, 1),
-                'owner_id' => rand(0, 1),
-                'color_id' => rand(0, 1) === 0 ? 'green' : 'purple',
-                'category_id' => rand(0, 3),
-                'date_due' => array_rand(array(0, date('Y-m-d'), date('Y-m-d', strtotime('+'.$i.'day')))),
-                'score' => rand(0, 21)
-            );
-
-            $this->assertEquals($i, $t->create($task));
-        }
-
-        $rows = $t->export(1, strtotime('-1 day'), strtotime('+1 day'));
-        $this->assertEquals($i, count($rows));
-        $this->assertEquals('Task Id', $rows[0][0]);
-        $this->assertEquals(1, $rows[1][0]);
-        $this->assertEquals('Task #'.($i - 1), $rows[$i - 1][11]);
-    }
-
     public function testFilter()
     {
         $t = new Task($this->registry);
@@ -477,25 +560,6 @@ class TaskTest extends Base
 
         $tasks = $t->find($filters);
         $this->assertEquals(0, count($tasks));
-    }
-
-    public function testDateFormat()
-    {
-        $t = new Task($this->registry);
-
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('2014-03-05', 'Y-m-d')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('2014_03_05', 'Y_m_d')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('05/03/2014', 'd/m/Y')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('03/05/2014', 'm/d/Y')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('3/5/2014', 'm/d/Y')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('5/3/2014', 'd/m/Y')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->getValidDate('5/3/14', 'd/m/y')));
-        $this->assertEquals(0, $t->getValidDate('5/3/14', 'd/m/Y'));
-        $this->assertEquals(0, $t->getValidDate('5-3-2014', 'd/m/Y'));
-
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->parseDate('2014-03-05')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->parseDate('2014_03_05')));
-        $this->assertEquals('2014-03-05', date('Y-m-d', $t->parseDate('03/05/2014')));
     }
 
     public function testDuplicateToTheSameProject()
@@ -570,6 +634,7 @@ class TaskTest extends Base
     {
         $t = new Task($this->registry);
         $p = new Project($this->registry);
+        $pp = new ProjectPermission($this->registry);
         $user = new User($this->registry);
 
         // We create a regular user
@@ -600,7 +665,7 @@ class TaskTest extends Base
         $this->assertEquals('test', $task['title']);
 
         // We allow only one user on the second project
-        $this->assertTrue($p->allowUser(2, 2));
+        $this->assertTrue($pp->allowUser(2, 2));
 
         // The owner should be reseted
         $task = $t->getById(2);
@@ -648,5 +713,9 @@ class TaskTest extends Base
         // We change the column and the position of our task
         $this->assertTrue($t->movePosition(1, 1, 1, 1));
         $this->assertTrue($this->registry->shared('event')->isEventTriggered(Task::EVENT_MOVE_COLUMN));
+
+        // We change the assignee
+        $this->assertTrue($t->update(array('owner_id' => 1, 'id' => 1)));
+        $this->assertTrue($this->registry->shared('event')->isEventTriggered(Task::EVENT_ASSIGNEE_CHANGE));
     }
 }

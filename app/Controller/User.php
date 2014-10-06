@@ -38,6 +38,7 @@ class User extends Base
             'errors' => array(),
             'values' => array(),
             'no_layout' => true,
+            'redirect_query' => $this->request->getStringParam('redirect_query'),
             'title' => t('Login')
         )));
     }
@@ -49,23 +50,30 @@ class User extends Base
      */
     public function check()
     {
+        $redirect_query = $this->request->getStringParam('redirect_query');
         $values = $this->request->getValues();
         list($valid, $errors) = $this->authentication->validateForm($values);
 
         if ($valid) {
-            $this->response->redirect('?controller=board');
+            if ($redirect_query !== '') {
+                $this->response->redirect('?'.$redirect_query);
+            }
+            else {
+                $this->response->redirect('?controller=board');
+            }
         }
 
         $this->response->html($this->template->layout('user_login', array(
             'errors' => $errors,
             'values' => $values,
             'no_layout' => true,
+            'redirect_query' => $redirect_query,
             'title' => t('Login')
         )));
     }
 
     /**
-     * Common layout for project views
+     * Common layout for user views
      *
      * @access private
      * @param  string    $template   Template name
@@ -181,7 +189,7 @@ class User extends Base
     {
         $user = $this->getUser();
         $this->response->html($this->layout('user_show', array(
-            'projects' => $this->project->getAvailableList($user['id']),
+            'projects' => $this->projectPermission->getAllowedProjects($user['id']),
             'user' => $user,
         )));
     }
@@ -244,7 +252,7 @@ class User extends Base
         }
 
         $this->response->html($this->layout('user_notifications', array(
-            'projects' => $this->project->getAvailableList($user['id']),
+            'projects' => $this->projectPermission->getAllowedProjects($user['id']),
             'notifications' => $this->notification->readSettings($user['id']),
             'user' => $user,
         )));
@@ -345,7 +353,7 @@ class User extends Base
         $this->response->html($this->layout('user_edit', array(
             'values' => $values,
             'errors' => $errors,
-            'projects' => $this->project->filterListByAccess($this->project->getList(), $user['id']),
+            'projects' => $this->projectPermission->filterProjects($this->project->getList(), $user['id']),
             'user' => $user,
         )));
     }
@@ -412,6 +420,7 @@ class User extends Base
                         'errors' => array('login' => t('Google authentication failed')),
                         'values' => array(),
                         'no_layout' => true,
+                        'redirect_query' => '',
                         'title' => t('Login')
                     )));
                 }
@@ -473,6 +482,7 @@ class User extends Base
                         'errors' => array('login' => t('GitHub authentication failed')),
                         'values' => array(),
                         'no_layout' => true,
+                        'redirect_query' => '',
                         'title' => t('Login')
                     )));
                 }

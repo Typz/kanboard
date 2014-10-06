@@ -2,9 +2,65 @@
 
 namespace Schema;
 
+use PDO;
 use Core\Security;
 
-const VERSION = 7;
+const VERSION = 12;
+
+function version_12($pdo)
+{
+    $pdo->exec("ALTER TABLE projects ADD COLUMN is_private BOOLEAN DEFAULT '0'");
+}
+
+function version_11($pdo)
+{
+    $rq = $pdo->prepare('INSERT INTO settings VALUES (?, ?)');
+    $rq->execute(array('application_date_format', 'm/d/Y'));
+}
+
+function version_10($pdo)
+{
+    $pdo->exec("
+        CREATE TABLE settings (
+            option VARCHAR(100) PRIMARY KEY,
+            value VARCHAR(255) DEFAULT ''
+        )
+    ");
+
+    // Migrate old config parameters
+    $rq = $pdo->prepare('SELECT * FROM config');
+    $rq->execute();
+    $parameters = $rq->fetch(PDO::FETCH_ASSOC);
+
+    $rq = $pdo->prepare('INSERT INTO settings VALUES (?, ?)');
+    $rq->execute(array('board_highlight_period', defined('RECENT_TASK_PERIOD') ? RECENT_TASK_PERIOD : 48*60*60));
+    $rq->execute(array('board_public_refresh_interval', defined('BOARD_PUBLIC_CHECK_INTERVAL') ? BOARD_PUBLIC_CHECK_INTERVAL : 60));
+    $rq->execute(array('board_private_refresh_interval', defined('BOARD_CHECK_INTERVAL') ? BOARD_CHECK_INTERVAL : 10));
+    $rq->execute(array('board_columns', $parameters['default_columns']));
+    $rq->execute(array('webhook_url_task_creation', $parameters['webhooks_url_task_creation']));
+    $rq->execute(array('webhook_url_task_modification', $parameters['webhooks_url_task_modification']));
+    $rq->execute(array('webhook_token', $parameters['webhooks_token']));
+    $rq->execute(array('api_token', $parameters['api_token']));
+    $rq->execute(array('application_language', $parameters['language']));
+    $rq->execute(array('application_timezone', $parameters['timezone']));
+    $rq->execute(array('application_url', defined('KANBOARD_URL') ? KANBOARD_URL : ''));
+
+    $pdo->exec('DROP TABLE config');
+}
+
+function version_9($pdo)
+{
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN reference VARCHAR(50) DEFAULT ''");
+    $pdo->exec("ALTER TABLE comments ADD COLUMN reference VARCHAR(50) DEFAULT ''");
+
+    $pdo->exec('CREATE INDEX tasks_reference_idx ON tasks(reference)');
+    $pdo->exec('CREATE INDEX comments_reference_idx ON comments(reference)');
+}
+
+function version_8($pdo)
+{
+    $pdo->exec('CREATE UNIQUE INDEX users_username_idx ON users(username)');
+}
 
 function version_7($pdo)
 {
@@ -17,7 +73,7 @@ function version_6($pdo)
         CREATE TABLE task_has_events (
             id SERIAL PRIMARY KEY,
             date_creation INTEGER NOT NULL,
-            event_name TEXT NOT NULL,
+            event_name VARCHAR(50) NOT NULL,
             creator_id INTEGER,
             project_id INTEGER,
             task_id INTEGER,
@@ -32,7 +88,7 @@ function version_6($pdo)
         CREATE TABLE subtask_has_events (
             id SERIAL PRIMARY KEY,
             date_creation INTEGER NOT NULL,
-            event_name TEXT NOT NULL,
+            event_name VARCHAR(50) NOT NULL,
             creator_id INTEGER,
             project_id INTEGER,
             subtask_id INTEGER,
@@ -49,7 +105,7 @@ function version_6($pdo)
         CREATE TABLE comment_has_events (
             id SERIAL PRIMARY KEY,
             date_creation INTEGER NOT NULL,
-            event_name TEXT NOT NULL,
+            event_name VARCHAR(50) NOT NULL,
             creator_id INTEGER,
             project_id INTEGER,
             comment_id INTEGER,

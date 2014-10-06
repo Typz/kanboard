@@ -2,10 +2,11 @@
 
 require __DIR__.'/app/common.php';
 
-use Core\Translator;
 use JsonRPC\Server;
 use Model\Project;
+use Model\ProjectPermission;
 use Model\Task;
+use Model\TaskValidator;
 use Model\User;
 use Model\Config;
 use Model\Category;
@@ -17,8 +18,13 @@ use Model\Webhook;
 use Model\Notification;
 
 $config = new Config($registry);
+$config->setupTranslations();
+$config->setupTimezone();
+
 $project = new Project($registry);
+$projectPermission = new ProjectPermission($registry);
 $task = new Task($registry);
+$taskValidator = new TaskValidator($registry);
 $user = new User($registry);
 $category = new Category($registry);
 $comment = new Comment($registry);
@@ -33,13 +39,8 @@ $project->attachEvents();
 $webhook->attachEvents();
 $notification->attachEvents();
 
-// Load translations
-$language = $config->get('language', 'en_US');
-if ($language !== 'en_US') Translator::load($language);
-
 $server = new Server;
 $server->authentication(array('jsonrpc' => $config->get('api_token')));
-
 
 /**
  * Project procedures
@@ -114,6 +115,10 @@ $server->register('getColumns', function($project_id) use ($board) {
     return $board->getColumns($project_id);
 });
 
+$server->register('getColumn', function($column_id) use ($board) {
+    return $board->getColumn($column_id);
+});
+
 $server->register('moveColumnUp', function($project_id, $column_id) use ($board) {
     return $board->moveUp($project_id, $column_id);
 });
@@ -122,36 +127,39 @@ $server->register('moveColumnDown', function($project_id, $column_id) use ($boar
     return $board->moveDown($project_id, $column_id);
 });
 
-$server->register('updateColumn', function($column_id, array $values) use ($board) {
-    return $board->updateColumn($column_id, $values);
+$server->register('updateColumn', function($column_id, $title, $task_limit = 0) use ($board) {
+    return $board->updateColumn($column_id, $title, $task_limit);
 });
 
-$server->register('addColumn', function($project_id, array $values) use ($board) {
-    $values += array('project_id' => $project_id);
-    return $board->add($values);
+$server->register('addColumn', function($project_id, $title, $task_limit = 0) use ($board) {
+    return $board->addColumn($project_id, $title, $task_limit);
 });
 
 $server->register('removeColumn', function($column_id) use ($board) {
     return $board->removeColumn($column_id);
 });
 
-$server->register('getAllowedUsers', function($project_id) use ($project) {
-    return $project->getUsersList($project_id, false, false);
+
+/**
+ * Project permissions procedures
+ */
+$server->register('getAllowedUsers', function($project_id) use ($projectPermission) {
+    return $projectPermission->getUsersList($project_id, false, false);
 });
 
-$server->register('revokeUser', function($project_id, $user_id) use ($project) {
-    return $project->revokeUser($project_id, $user_id);
+$server->register('revokeUser', function($project_id, $user_id) use ($project, $projectPermission) {
+    return $projectPermission->revokeUser($project_id, $user_id);
 });
 
-$server->register('allowUser', function($project_id, $user_id) use ($project) {
-    return $project->allowUser($project_id, $user_id);
+$server->register('allowUser', function($project_id, $user_id) use ($project, $projectPermission) {
+    return $projectPermission->allowUser($project_id, $user_id);
 });
 
 
 /**
  * Task procedures
  */
-$server->register('createTask', function($title, $project_id, $color_id = '', $column_id = 0, $owner_id = 0, $creator_id = 0, $date_due = '', $description = '', $category_id = 0, $score = 0) use ($task) {
+$server->register('createTask', function($title, $project_id, $color_id = '', $column_id = 0, $owner_id = 0, $creator_id = 0, $date_due = '', $description = '', $category_id = 0, $score = 0) use ($task, $taskValidator) {
 
     $values = array(
         'title' => $title,
@@ -166,7 +174,7 @@ $server->register('createTask', function($title, $project_id, $color_id = '', $c
         'score' => $score,
     );
 
-    list($valid,) = $task->validateCreation($values);
+    list($valid,) = $taskValidator->validateCreation($values);
     return $valid && $task->create($values) !== false;
 });
 
@@ -178,7 +186,7 @@ $server->register('getAllTasks', function($project_id, $status) use ($task) {
     return $task->getAll($project_id, $status);
 });
 
-$server->register('updateTask', function($id, $title = null, $project_id = null, $color_id = null, $column_id = null, $owner_id = null, $creator_id = null, $date_due = null, $description = null, $category_id = null, $score = null) use ($task) {
+$server->register('updateTask', function($id, $title = null, $project_id = null, $color_id = null, $column_id = null, $owner_id = null, $creator_id = null, $date_due = null, $description = null, $category_id = null, $score = null) use ($task, $taskValidator) {
 
     $values = array(
         'id' => $id,
@@ -200,7 +208,7 @@ $server->register('updateTask', function($id, $title = null, $project_id = null,
         }
     }
 
-    list($valid) = $task->validateModification($values);
+    list($valid) = $taskValidator->validateApiModification($values);
     return $valid && $task->update($values);
 });
 
@@ -224,7 +232,18 @@ $server->register('moveTaskPosition', function($project_id, $task_id, $column_id
 /**
  * User procedures
  */
-$server->register('createUser', function(array $values) use ($user) {
+$server->register('createUser', function($username, $password, $name = '', $email = '', $is_admin = 0, $default_project_id = 0) use ($user) {
+
+    $values = array(
+        'username' => $username,
+        'password' => $password,
+        'confirmation' => $password,
+        'name' => $name,
+        'email' => $email,
+        'is_admin' => $is_admin,
+        'default_project_id' => $default_project_id,
+    );
+
     list($valid,) = $user->validateCreation($values);
     return $valid && $user->create($values);
 });
@@ -237,8 +256,24 @@ $server->register('getAllUsers', function() use ($user) {
     return $user->getAll();
 });
 
-$server->register('updateUser', function($values) use ($user) {
-    list($valid,) = $user->validateModification($values);
+$server->register('updateUser', function($id, $username = null, $name = null, $email = null, $is_admin = null, $default_project_id = null) use ($user) {
+
+    $values = array(
+        'id' => $id,
+        'username' => $username,
+        'name' => $name,
+        'email' => $email,
+        'is_admin' => $is_admin,
+        'default_project_id' => $default_project_id,
+    );
+
+    foreach ($values as $key => $value) {
+        if (is_null($value)) {
+            unset($values[$key]);
+        }
+    }
+
+    list($valid,) = $user->validateApiModification($values);
     return $valid && $user->update($values);
 });
 
@@ -288,7 +323,14 @@ $server->register('removeCategory', function($category_id) use ($category) {
 /**
  * Comments procedures
  */
-$server->register('createComment', function(array $values) use ($comment) {
+$server->register('createComment', function($task_id, $user_id, $content) use ($comment) {
+
+    $values = array(
+        'task_id' => $task_id,
+        'user_id' => $user_id,
+        'comment' => $content,
+    );
+
     list($valid,) = $comment->validateCreation($values);
     return $valid && $comment->create($values);
 });
@@ -301,7 +343,13 @@ $server->register('getAllComments', function($task_id) use ($comment) {
     return $comment->getAll($task_id);
 });
 
-$server->register('updateComment', function($values) use ($comment) {
+$server->register('updateComment', function($id, $content) use ($comment) {
+
+    $values = array(
+        'id' => $id,
+        'comment' => $content,
+    );
+
     list($valid,) = $comment->validateModification($values);
     return $valid && $comment->update($values);
 });
@@ -343,7 +391,7 @@ $server->register('getAllSubtasks', function($task_id) use ($subtask) {
     return $subtask->getAll($task_id);
 });
 
-$server->register('updateSubtask', function($id, $task_id, $title = null, $user_id = 0, $time_estimated = 0, $time_spent = 0, $status = 0) use ($subtask) {
+$server->register('updateSubtask', function($id, $task_id, $title = null, $user_id = null, $time_estimated = null, $time_spent = null, $status = null) use ($subtask) {
 
     $values = array(
         'id' => $id,

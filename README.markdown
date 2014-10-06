@@ -23,7 +23,7 @@ Features
 - Boards customization, rename/add/remove columns
 - Tasks with different colors, categories, sub-tasks, attachments, comments and Markdown support for the description
 - Automatic actions based on events
-- Users management with a basic privileges separation (administrator or regular user)
+- User management with a basic privileges separation (administrator or regular user)
 - Email notifications
 - External authentication: Google, GitHub, LDAP/ActiveDirectory and Reverse-Proxy
 - Webhooks to create tasks from an external software
@@ -48,10 +48,28 @@ Documentation
 
 ### Using Kanboard
 
+#### Introduction
+
 - [Usage examples](docs/usage-examples.markdown)
-- [Manage users](docs/manage-users.markdown)
-- [Syntax guide](docs/syntax-guide.markdown)
+
+#### Working with projects
+
+- [Creating projects](docs/creating-projects.markdown)
+- [Editing projects](docs/editing-projects.markdown)
+- [Sharing boards and tasks](docs/sharing-projects.markdown)
 - [Automatic actions](docs/automatic-actions.markdown)
+
+#### Working with tasks
+
+- [Creating tasks](docs/creating-tasks.markdown)
+
+#### Working with users
+
+- [User management](docs/manage-users.markdown)
+
+#### More
+
+- [Syntax guide](docs/syntax-guide.markdown)
 
 ### Technical details
 
@@ -91,6 +109,7 @@ Documentation
 
 - [Translations](docs/translations.markdown)
 - [Coding standards](docs/coding-standards.markdown)
+- [Running tests](docs/tests.markdown)
 
 The documentation is written in [Markdown](http://en.wikipedia.org/wiki/Markdown).
 If you want to improve the documentation, just send a pull-request.
@@ -107,7 +126,7 @@ Original author: [Frédéric Guillot](http://fredericguillot.com/)
 
 Contributors:
 
-- Alex Butum: https://github.com/dZkF9RWJT6wN8ux
+- Alex Butum
 - Ashish Kulkarni: https://github.com/ashkulz
 - Claudio Lobo
 - Cmer: https://github.com/chncsu

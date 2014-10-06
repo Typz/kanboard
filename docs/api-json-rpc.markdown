@@ -56,6 +56,60 @@ Response from the server:
 }
 ```
 
+### Example with Python
+
+Here a basic example written in Python to create a task:
+
+```python
+#!/usr/bin/env python
+
+import requests
+import json
+
+def main():
+    url = "http://demo.kanboard.net/jsonrpc.php"
+    api_key = "be4271664ca8169d32af49d8e1ec854edb0290bc3588a2e356275eab9505"
+    headers = {"content-type": "application/json"}
+
+    payload = {
+        "method": "createTask",
+        "params": {
+            "title": "Python API test",
+            "project_id": 1
+        },
+        "jsonrpc": "2.0",
+        "id": 1,
+    }
+
+    response = requests.post(
+        url,
+        data=json.dumps(payload),
+        headers=headers,
+        auth=("jsonrpc", api_key)
+    )
+
+    if response.status_code == 401:
+        print "Authentication failed"
+    else:
+        result = response.json()
+
+        assert result["result"] == True
+        assert result["jsonrpc"]
+        assert result["id"] == 1
+
+        print "Task created successfully!"
+
+if __name__ == "__main__":
+    main()
+```
+
+Run this script from your terminal:
+
+```bash
+python jsonrpc.py
+Task created successfully!
+```
+
 ### Example with a PHP client:
 
 I wrote a simple [Json-RPC Client/Server library in PHP](https://github.com/fguillot/JsonRPC), here an example:
@@ -162,7 +216,8 @@ Response example:
 ### getProjectByName
 
 - Purpose: **Get project information**
-- Parameters: **name** (string)
+- Parameters:
+    - **name** (string, required)
 - Result on success: **project properties**
 - Result on failure: **null**
 
@@ -199,7 +254,8 @@ Response example:
 ### getAllProjects
 
 - Purpose: **Get all available projects**
-- Parameters: **none**
+- Parameters:
+    - **none**
 - Result on success: **List of projects**
 - Result on failure: **false**
 
@@ -424,86 +480,453 @@ Request example:
 Response example:
 
 ```json
-
+{
     "jsonrpc": "2.0",
     "id": 942472945,
     "result": true
 }
 ```
 
+### getAllowedUsers
+
+- Purpose: **Get allowed users for a given project**
+- Note: Only people explicitly allowed are part of this list, administrators are always authorized
+- Parameters:
+    - **project_id** (integer, required)
+- Result on success: Key/value pair of user_id and username
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllowedUsers",
+    "id": 1944388643,
+    "params": [
+        1
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1944388643,
+    "result": {
+        "1": "user1",
+        "2": "user2",
+        "3": "user3"
+    }
+}
+```
+
+### revokeUser
+
+- Purpose: **Revoke user access for a given project**
+- Parameters:
+    - **project_id** (integer, required)
+    - **user_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "revokeUser",
+    "id": 251218350,
+    "params": [
+        1,
+        2
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 251218350,
+    "result": true
+}
+```
+
+### allowUser
+
+- Purpose: **Grant user access for a given project**
+- Parameters:
+    - **project_id** (integer, required)
+    - **user_id** (integer, required)
+- Result on success: **true**
+- Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "allowUser",
+    "id": 2111451404,
+    "params": [
+        1,
+        2
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 2111451404,
+    "result": true
+}
+```
 
 
 ### getBoard
 
 - Purpose: **Get all necessary information to display a board**
-- Parameters: **project_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
 - Result on success: **board properties**
-- Result on failure: **null**
+- Result on failure: **empty list**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getBoard",
+    "id": 1627282648,
+    "params": [
+        1
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1627282648,
+    "result": [
+        {
+            "id": "1",
+            "title": "Backlog",
+            "position": "1",
+            "project_id": "1",
+            "task_limit": "0",
+            "tasks": []
+        },
+        {
+            "id": "2",
+            "title": "Ready",
+            "position": "2",
+            "project_id": "1",
+            "task_limit": "0",
+            "tasks": []
+        },
+        {
+            "id": "3",
+            "title": "Work in progress",
+            "position": "3",
+            "project_id": "1",
+            "task_limit": "0",
+            "tasks": [
+                {
+                    "nb_comments": "0",
+                    "nb_files": "0",
+                    "nb_subtasks": "1",
+                    "nb_completed_subtasks": "0",
+                    "id": "1",
+                    "title": "Task with comment",
+                    "description": "",
+                    "date_creation": "1410952872",
+                    "date_modification": "1410952872",
+                    "date_completed": null,
+                    "date_due": "0",
+                    "color_id": "red",
+                    "project_id": "1",
+                    "column_id": "3",
+                    "owner_id": "1",
+                    "creator_id": "0",
+                    "position": "1",
+                    "is_active": "1",
+                    "score": "0",
+                    "category_id": "0",
+                    "assignee_username": "admin",
+                    "assignee_name": null
+                }
+            ]
+        },
+        ...
+    ]
+}
+```
 
 ### getColumns
 
 - Purpose: **Get all columns information for a given project**
-- Parameters: **project_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
 - Result on success: **columns properties**
+- Result on failure: **empty list**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getColumns",
+    "id": 887036325,
+    "params": [
+        1
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 887036325,
+    "result": [
+        {
+            "id": "1",
+            "title": "Backlog",
+            "position": "1",
+            "project_id": "1",
+            "task_limit": "0"
+        },
+        {
+            "id": "2",
+            "title": "Ready",
+            "position": "2",
+            "project_id": "1",
+            "task_limit": "0"
+        },
+        {
+            "id": "3",
+            "title": "Work in progress",
+            "position": "3",
+            "project_id": "1",
+            "task_limit": "0"
+        }
+    ]
+}
+```
+
+### getColumn
+
+- Purpose: **Get a single column**
+- Parameters:
+    - **column_id** (integer, required)
+- Result on success: **column properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getColumn",
+    "id": 1242049935,
+    "params": [
+        2
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1242049935,
+    "result": {
+        "id": "2",
+        "title": "Youpi",
+        "position": "2",
+        "project_id": "1",
+        "task_limit": "5"
+    }
+}
+```
 
 ### moveColumnUp
 
 - Purpose: **Move up the column position**
-- Parameters: **project_id** (integer), **column_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
+    - **column_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "moveColumnUp",
+    "id": 99275573,
+    "params": [
+        1,
+        2
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 99275573,
+    "result": true
+}
+```
 
 ### moveColumnDown
 
 - Purpose: **Move down the column position**
-- Parameters: **project_id** (integer), **column_id** (integer)
+- Parameters:
+    - **project_id** (integer, required)
+    - **column_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "moveColumnDown",
+    "id": 957090649,
+    "params": {
+        "project_id": 1,
+        "column_id": 2
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 957090649,
+    "result": true
+}
+```
 
 ### updateColumn
 
 - Purpose: **Update column properties**
-- Parameters: **column_id** (integer), **values** (**title** string, **task_limit** integer)
+- Parameters:
+    - **column_id** (integer, required)
+    - **title** (string, required)
+    - **task_limit** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateColumn",
+    "id": 480740641,
+    "params": [
+        2,
+        "Boo",
+        5
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 480740641,
+    "result": true
+}
+```
 
 ### addColumn
 
 - Purpose: **Add a new column**
-- Parameters: **project_id** (integer), **values** (**title** string, **task_limit** integer)
+- Parameters:
+    - **project_id** (integer, required)
+    - **title** (string, required)
+    - **task_limit** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "addColumn",
+    "id": 638544704,
+    "params": [
+        1,
+        "Boo"
+    ]
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 638544704,
+    "result": true
+}
+```
 
 ### removeColumn
 
 - Purpose: **Remove a column**
-- Parameters: **column_id** (integer)
+- Parameters:
+    - **column_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 
-### getAllowedUsers
+Request example:
 
-- Purpose: **Get allowed users for a given project**
-- Parameters: **project_id** (integer)
-- Result on success: Key/value pair of user_id and username
-- Result on failure: **false**
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeColumn",
+    "id": 1433237746,
+    "params": [
+        1
+    ]
+}
+```
 
-### revokeUser
+Response example:
 
-- Purpose: **Revoke user access for a given project**
-- Parameters: **project_id** (integer), **user_id** (integer)
-- Result on success: **true**
-- Result on failure: **false**
-
-### allowUser
-
-- Purpose: **Grant user access for a given project**
-- Parameters: **project_id** (integer), **user_id** (integer)
-- Result on success: **true**
-- Result on failure: **false**
-
-
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1433237746,
+    "result": true
+}
+```
 
 
 ### createTask
@@ -514,7 +937,7 @@ Response example:
     - **project_id** (integer, required)
     - **color_id** (string, optional)
     - **column_id** (integer, optional)
-    - **description** (string, optional)
+    - **description** Markdown content (string, optional)
     - **owner_id** (integer, optional)
     - **creator_id** (integer, optional)
     - **score** (integer, optional)
@@ -683,7 +1106,7 @@ Response example:
     - **color_id** (string, optional)
     - **project_id** (integer, optional)
     - **column_id** (integer, optional)
-    - **description** (string, optional)
+    - **description** Markdown content (string, optional)
     - **owner_id** (integer, optional)
     - **creator_id** (integer, optional)
     - **score** (integer, optional)
@@ -849,39 +1272,192 @@ Response example:
 ### createUser
 
 - Purpose: **Create a new user**
-- Parameters: Key/value pair composed of the **username** (string), **password** (string), **confirmation** (string), **name** (string, optional), **email** (string, optional), is_admin (integer, optional), **default_project_id** (integer, optional)
+- Parameters:
+    - **username** Must be unique (string, required)
+    - **password** Must have at least 6 characters (string, required)
+    - **name** (string, optional)
+    - **email** (string, optional)
+    - **is_admin** Set the value 1 for admins or 0 for regular users (integer, optional)
+    - **default_project_id** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createUser",
+    "id": 1518863034,
+    "params": {
+        "username": "biloute",
+        "password": "123456"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1518863034,
+    "result": true
+}
+```
 
 ### getUser
 
 - Purpose: **Get user information**
-- Parameters: **user_id** (integer)
+- Parameters:
+    - **user_id** (integer, required)
 - Result on success: **user properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getUser",
+    "id": 1769674781,
+    "params": {
+        "user_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1769674781,
+    "result": {
+        "id": "1",
+        "username": "biloute",
+        "password": "$2y$10$dRs6pPoBu935RpmsrhmbjevJH5MgZ7Kr9QrnVINwwyZ3.MOwqg.0m",
+        "is_admin": "0",
+        "default_project_id": "0",
+        "is_ldap_user": "0",
+        "name": "",
+        "email": "",
+        "google_id": null,
+        "github_id": null,
+        "notifications_enabled": "0"
+    }
+}
+```
 
 ### getAllUsers
 
 - Purpose: **Get all available users**
-- Parameters: **none**
+- Parameters:
+    - **none**
 - Result on success: **List of users**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllUsers",
+    "id": 1438712131
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1438712131,
+    "result": [
+        {
+            "id": "1",
+            "username": "biloute",
+            "name": "",
+            "email": "",
+            "is_admin": "0",
+            "default_project_id": "0",
+            "is_ldap_user": "0",
+            "notifications_enabled": "0",
+            "google_id": null,
+            "github_id": null
+        },
+        ...
+    ]
+}
+```
 
 ### updateUser
 
 - Purpose: **Update a user**
-- Parameters: Key/value pair composed of the **id** (integer), **username** (string), **password** (string), **confirmation** (string), **name** (string, optional), **email** (string, optional), is_admin (integer, optional), **default_project_id** (integer, optional)
+- Parameters:
+    - **id** (integer)
+    - **username** (string, optional)
+    - **name** (string, optional)
+    - **email** (string, optional)
+    - **is_admin** (integer, optional)
+    - **default_project_id** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateUser",
+    "id": 322123657,
+    "params": {
+        "id": 1,
+        "is_admin": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 322123657,
+    "result": true
+}
+```
 
 ### removeUser
 
 - Purpose: **Remove a user**
-- Parameters: **user_id** (integer)
+- Parameters:
+    - **user_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 
+Request example:
 
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeUser",
+    "id": 2094191872,
+    "params": {
+        "user_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 2094191872,
+    "result": true
+}
+```
 
 
 ### createCategory
@@ -889,7 +1465,7 @@ Response example:
 - Purpose: **Create a new category**
 - Parameters:
 - **project_id** (integer, required)
-    - **name** (string, required, must unique for the given project)
+    - **name** (string, required, must be unique for the given project)
 - Result on success: **true**
 - Result on failure: **false**
 
@@ -977,7 +1553,7 @@ Request example:
 Response example:
 
 ```json
-
+{
     "jsonrpc": "2.0",
     "id": 1261777968,
     "result": [
@@ -1058,39 +1634,182 @@ Response example:
 ### createComment
 
 - Purpose: **Create a new comment**
-- Parameters: Key/value pair composed of the **task_id** (integer), **user_id** (integer), **comment** (string)
+- Parameters:
+    - **task_id** (integer, required)
+    - **user_id** (integer, required)
+    - **content** Markdown content (string, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "createComment",
+    "id": 1580417921,
+    "params": {
+        "task_id": 1,
+        "user_id": 1,
+        "content": "Comment #1"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1580417921,
+    "result": true
+}
+```
 
 ### getComment
 
 - Purpose: **Get comment information**
-- Parameters: **comment_id** (integer)
+- Parameters:
+    - **comment_id** (integer, required)
 - Result on success: **comment properties**
 - Result on failure: **null**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getComment",
+    "id": 867839500,
+    "params": {
+        "comment_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 867839500,
+    "result": {
+        "id": "1",
+        "task_id": "1",
+        "user_id": "1",
+        "date": "1410881970",
+        "comment": "Comment #1",
+        "username": "admin",
+        "name": null
+    }
+}
+```
 
 ### getAllComments
 
 - Purpose: **Get all available comments**
-- Parameters: **none**
+- Parameters:
+    - **task_id** (integer, required)
 - Result on success: **List of comments**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "getAllComments",
+    "id": 148484683,
+    "params": {
+        "task_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 148484683,
+    "result": [
+        {
+            "id": "1",
+            "date": "1410882272",
+            "task_id": "1",
+            "user_id": "1",
+            "comment": "Comment #1",
+            "username": "admin",
+            "name": null
+        },
+        ...
+    ]
+}
+```
 
 ### updateComment
 
 - Purpose: **Update a comment**
-- Parameters: Key/value pair composed of the **id** (integer), **task_id** (integer), **user_id** (integer), **comment** (string)
+- Parameters:
+    - **id** (integer, required)
+    - **content** Markdown content (string, required)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "updateComment",
+    "id": 496470023,
+    "params": {
+        "id": 1,
+        "content": "Comment #1 updated"
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1493368950,
+    "result": true
+}
+```
 
 ### removeComment
 
 - Purpose: **Remove a comment**
-- Parameters: **comment_id** (integer)
+- Parameters:
+    - **comment_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 
+Request example:
 
+```json
+{
+    "jsonrpc": "2.0",
+    "method": "removeComment",
+    "id": 328836871,
+    "params": {
+        "comment_id": 1
+    }
+}
+```
+
+Response example:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 328836871,
+    "result": true
+}
+```
 
 
 ### createSubtask
@@ -1105,6 +1824,8 @@ Response example:
     - **status** (int, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request example:
 
 ```json
 {
@@ -1215,11 +1936,13 @@ Response example:
     - **task_id** (integer, required)
     - **title** (integer, optional)
     - **assignee_id** (integer, optional)
-    - **time_estimated (integer, optional)
+    - **time_estimated** (integer, optional)
     - **time_spent** (integer, optional)
     - **status** (integer, optional)
 - Result on success: **true**
 - Result on failure: **false**
+
+Request examples:
 
 ```json
 {
@@ -1250,7 +1973,7 @@ Response example:
 
 - Purpose: **Remove a subtask**
 - Parameters:
-    **subtask_id** (integer, required)
+    - **subtask_id** (integer, required)
 - Result on success: **true**
 - Result on failure: **false**
 

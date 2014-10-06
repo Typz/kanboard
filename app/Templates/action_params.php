@@ -1,7 +1,6 @@
 <div class="page-header">
     <h2><?= t('Automatic actions for the project "%s"', $project['name']) ?></h2>
 </div>
-<section>
 
 <h3><?= t('Define action parameters') ?></h3>
 <form method="post" action="?controller=action&amp;action=create&amp;project_id=<?= $project['id'] ?>" autocomplete="off">
@@ -27,7 +26,11 @@
         <?php elseif (Helper\contains($param_name, 'category_id')): ?>
             <?= Helper\form_label($param_desc, $param_name) ?>
             <?= Helper\form_select('params['.$param_name.']', $categories_list, $values) ?><br/>
+        <?php elseif (Helper\contains($param_name, 'label')): ?>
+            <?= Helper\form_label($param_desc, $param_name) ?>
+            <?= Helper\form_text('params['.$param_name.']', $values) ?>
         <?php endif ?>
+
     <?php endforeach ?>
 
     <div class="form-actions">
