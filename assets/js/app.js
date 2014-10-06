@@ -130,7 +130,7 @@ Kanboard.Board = (function() {
                         $.get(href, setTooltipContent);
                     });
                 });
-                return "...";
+                return '<i class="fa fa-refresh fa-spin fa-2x"></i>';
             }
         }).on("mouseenter", function () {
             var _this = this;
