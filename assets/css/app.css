@@ -568,6 +568,10 @@ a.filter-on {
     margin-top: 5px;
 }
 
+#board {
+    table-layout: fixed;
+}
+
 #board th a {
     text-decoration: none;
     font-size: 150%;
@@ -617,6 +621,7 @@ a.filter-on {
     padding: 5px;
     font-size: 90%;
     border-radius: 4px;
+    word-wrap: break-word;
 }
 
 .task-board-recent {
