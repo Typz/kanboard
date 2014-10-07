@@ -691,10 +691,6 @@ a.filter-on {
 }
 
 .task-board-recent {
-    box-shadow: 0px 0px 10px rgba(82, 158, 236, 1);
-}
-
-.task-board-recent {
     box-shadow: 0px 0px 10px rgba(130, 130, 130, 1);
 }
 
