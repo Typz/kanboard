@@ -27,10 +27,9 @@
         <tr>
             <td><?= Helper\escape($subtask['title']) ?></td>
             <td>
-            <?php if (isset($not_editable)): ?>
-                <?= Helper\escape($subtask['status_name']) ?>
-            <?php else: ?>
+            <?php if (!isset($not_editable)): ?>
                 <a href="?controller=subtask&amp;action=toggleStatus&amp;task_id=<?= $task['id'] ?>&amp;subtask_id=<?= $subtask['id'] ?>">
+            <?php endif ?>
                     <?php if ($subtask['status'] == 0): ?>
                         <i class="fa fa-square-o fa-fw"></i><i class="fa">&nbsp;<?= Helper\escape($subtask['status_name']) ?></i>
                     <?php elseif ($subtask['status'] == 1): ?>
@@ -38,6 +37,7 @@
                     <?php else: ?>
                         <i class="fa fa-check-square-o fa-fw"></i><i class="fa">&nbsp;<?= Helper\escape($subtask['status_name']) ?></i>
                     <?php endif ?>
+            <?php if (!isset($not_editable)): ?>
                 </a>
             <?php endif ?>
 			</td>
@@ -72,12 +72,14 @@
         <?php endforeach ?>
     </table>
 
+    <?php if (!isset($not_editable)): ?>
     <form method="post" action="?controller=subtask&amp;action=save&amp;task_id=<?= $task['id'] ?>" autocomplete="off">
         <?= Helper\form_csrf() ?>
         <?= Helper\form_hidden('task_id', array('task_id'=>$task['id'])) ?>
         <?= Helper\form_text('title', $values, array(), array('required', 'placeholder="' . t('Type here to create a new sub-task') . '"')) ?>
         <input type="submit" value="<?= t('Add') ?>" class="btn btn-blue"/>
     </form>
+    <?php endif ?>
 
     <div class="subtasks-time-tracking">
         <h4><?= t('Time tracking') ?></h4>
