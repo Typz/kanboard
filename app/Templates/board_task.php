@@ -98,11 +98,11 @@
         <?php endif ?>
 
         <?php if (! empty($task['nb_files'])): ?>
-            <span title="<?= t('Attachments') ?>"><i class="fa fa-paperclip"></i><?= $task['nb_files'] ?></span>
+            <span title="<?= t('Attachments') ?>" class="task-board-tooltip" href="?controller=board&amp;action=getAttachments&amp;task_id=<?= $task['id'] ?>"><i class="fa fa-paperclip"></i><?= $task['nb_files'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['nb_comments'])): ?>
-            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"><i class="fa fa-comment-o"></i><?= $task['nb_comments'] ?></span>
+            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>" class="task-board-tooltip" href="?controller=board&amp;action=getComments&amp;task_id=<?= $task['id'] ?>"><i class="fa fa-comment-o"></i><?= $task['nb_comments'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
