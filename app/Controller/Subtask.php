@@ -186,22 +186,24 @@ class Subtask extends Base
     }
 
     /**
-     * Toggle status
      * Change status to the next status: Toto -> In Progress -> Done
+     *
      * @access public
      */
     public function toggleStatus()
     {
+        $task = $this->getTask();
         $subtask = $this->getSubtask();
 
-        $value = array( 'id' => $subtask['id'],
-                        'status' => ($subtask['status'] + 1) % 3 );
+        $value = array(
+            'id' => $subtask['id'],
+            'status' => ($subtask['status'] + 1) % 3
+        );
 
-        $task = $this->getTask();
-        if (!$this->subTask->update($value)) {
-            $this->session->flashError(t('Unable to change sub-task state.'));
+        if (! $this->subTask->update($value)) {
+            $this->session->flashError(t('Unable to update your sub-task.'));
         }
 
-        $this->response->redirect('?controller=task&action=show&task_id='.$task['id'].'#subtasks');      
+        $this->response->redirect('?controller=task&action=show&task_id='.$task['id'].'#subtasks');
     }
 }
