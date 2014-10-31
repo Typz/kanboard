@@ -369,17 +369,17 @@ div.ui-tooltip {
 
 .tooltip-arrow {
     width: 20px;
-    height: 20px;
+    height: 10px;
     overflow: hidden;
     position: absolute;
 }
 
 .tooltip-arrow.top {
-    top: -20px;
+    top: -10px;
 }
 
 .tooltip-arrow.bottom {
-    bottom: -20px;
+    bottom: -10px;
 }
 
 .tooltip-arrow.align-left {
@@ -393,8 +393,8 @@ div.ui-tooltip {
 .tooltip-arrow:after {
     content: "";
     position: absolute;
-    width: 14.14213562373095048802px;
-    height: 14.14213562373095048802px;
+    width: 14px;
+    height: 14px;
     -webkit-transform: rotate(45deg);
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
