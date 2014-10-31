@@ -67,7 +67,10 @@
     <span class="task-board-user">
         <a class="assignee-popover" href="?controller=board&amp;action=changeAssignee&amp;task_id=<?= $task['id'] ?>" title="<?= t('Change assignee') ?>">
         <?php if (! empty($task['owner_id'])): ?>
-            <?= t('Assigned to %s', $task['assignee_name'] ?: $task['assignee_username']) ?></a>
+            <?= t('Assigned to %s', $task['assignee_name'] ?: $task['assignee_username']) ?>
+            <?php if (Helper\is_current_user($task['owner_id'])) : ?>
+                <i class='fa fa-star'></i>
+            <?php endif ?>
         <?php else: ?>
             <?= t('Nobody assigned') ?>
         <?php endif ?>
