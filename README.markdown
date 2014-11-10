@@ -31,7 +31,7 @@ Features
 - Host anywhere (shared hosting, VPS, Raspberry Pi or localhost)
 - No external dependencies
 - **Super easy setup**, copy and paste files and you are done!
-- Translations in English, French, Brazilian Portuguese, Spanish, German, Polish, Swedish, Finnish, Italian, Chinese, Russian...
+- Translated in 14 languages (Brazilian, Chinese, Danish, English, Finnish, French, German, Italian, Japanese, Polish, Russian, Spanish, Swedish, Thai)
 
 Known bugs and feature requests
 -------------------------------
@@ -50,6 +50,8 @@ Documentation
 
 #### Introduction
 
+- [What is Kanban?](docs/what-is-kanban.markdown)
+- [Kanban vs Todo Lists and Scrum](docs/kanban-vs-todo-and-scrum.markdown)
 - [Usage examples](docs/usage-examples.markdown)
 
 #### Working with projects
@@ -58,6 +60,7 @@ Documentation
 - [Editing projects](docs/editing-projects.markdown)
 - [Sharing boards and tasks](docs/sharing-projects.markdown)
 - [Automatic actions](docs/automatic-actions.markdown)
+- [Project permissions](docs/project-permissions.markdown)
 
 #### Working with tasks
 
@@ -65,11 +68,17 @@ Documentation
 
 #### Working with users
 
-- [User management](docs/manage-users.markdown)
+- [User management](docs/user-management.markdown)
+
+#### Settings
+
+- [Application settings](docs/application-configuration.markdown)
+- [Board settings](docs/board-configuration.markdown)
 
 #### More
 
 - [Syntax guide](docs/syntax-guide.markdown)
+- [Frequently asked questions](docs/faq.markdown)
 
 ### Technical details
 
@@ -96,17 +105,22 @@ Documentation
 - [GitHub authentication](docs/github-authentication.markdown)
 - [Reverse proxy authentication](docs/reverse-proxy-authentication.markdown)
 
+### Integration
+
+- [Github webhooks](docs/github-webhooks.markdown)
+
 #### Developers and sysadmins
 
-- [Board configuration](docs/board-configuration.markdown)
 - [Email configuration](docs/email-configuration.markdown)
 - [Command line interface](docs/cli.markdown)
 - [Json-RPC API](docs/api-json-rpc.markdown)
 - [Webhooks](docs/webhooks.markdown)
-- [How to use Kanboard with Vagrant](docs/vagrant.markdown)
+- [Run Kanboard with Vagrant](docs/vagrant.markdown)
+- [Run Kanboard with Docker](docs/docker.markdown)
 
 ### Contributors
 
+- [Contributor guide](docs/contributing.markdown)
 - [Translations](docs/translations.markdown)
 - [Coding standards](docs/coding-standards.markdown)
 - [Running tests](docs/tests.markdown)
@@ -127,40 +141,47 @@ Original author: [Frédéric Guillot](http://fredericguillot.com/)
 Contributors:
 
 - Alex Butum
-- Aleix Pol: https://github.com/aleixpol
-- Ashish Kulkarni: https://github.com/ashkulz
+- [Aleix Pol](https://github.com/aleixpol)
+- [Ashish Kulkarni](https://github.com/ashkulz)
+- [Chorgroup](https://github.com/chorgroup)
 - Claudio Lobo
-- Cmer: https://github.com/chncsu
-- Floaltvater: https://github.com/floaltvater
-- Gavlepeter: https://github.com/gavlepeter
-- Janne Mäntyharju: https://github.com/JanneMantyharju
-- Jesusaplsoft: https://github.com/jesusaplsoft
-- Kiswa: https://github.com/kiswa
-- Kralo: https://github.com/kralo
-- Levlaz: https://github.com/levlaz
-- Lim Yuen Hoe: https://github.com/jasonmoofang
-- Mathgl67: https://github.com/mathgl67
-- Matthieu Keller: https://github.com/maggick
-- Mauro Mariño: https://github.com/moromarino
-- Maxime: https://github.com/EpocDotFr
-- Moraxy: https://github.com/moraxy
-- Nala Ginrut: https://github.com/NalaGinrut
-- Nekohayo: https://github.com/nekohayo
-- Nramel: https://github.com/nramel
-- Null-Kelvin: https://github.com/Null-Kelvin
-- Olivier Maridat: https://github.com/oliviermaridat
-- Poikilotherm: https://github.com/poikilotherm
-- Rafaelrossa: https://github.com/rafaelrossa
-- Raphaël Doursenaud: https://github.com/rdoursenaud
-- Rzeka: https://github.com/rzeka
-- Sebastien pacilly: https://github.com/spacilly
-- Sylvain Veyrié: https://github.com/turb
-- Toomyem: https://github.com/Toomyem
-- Tony G. Bolaño: https://github.com/tonybolanyo
-- Torsten: https://github.com/misterfu
-- Troloo: https://github.com/troloo
-- Typz: https://github.com/Typz
-- Vedovator: https://github.com/vedovator
-- Ybarc: https://github.com/ybarc
+- [Cmer](https://github.com/chncsu)
+- [David-Norris](https://github.com/David-Norris)
+- [Fengchao](https://github.com/fengchao)
+- [Floaltvater](https://github.com/floaltvater)
+- [Gavlepeter](https://github.com/gavlepeter)
+- [Janne Mäntyharju](https://github.com/JanneMantyharju)
+- [Jesusaplsoft](https://github.com/jesusaplsoft)
+- [Kiswa](https://github.com/kiswa)
+- [Kralo](https://github.com/kralo)
+- [Lars Christian Schou](https://github.com/NegoZiatoR)
+- [Levlaz](https://github.com/levlaz)
+- [Lim Yuen Hoe](https://github.com/jasonmoofang)
+- [Mathgl67](https://github.com/mathgl67)
+- [Matthieu Keller](https://github.com/maggick)
+- [Mauro Mariño](https://github.com/moromarino)
+- [Maxime](https://github.com/EpocDotFr)
+- [Moraxy](https://github.com/moraxy)
+- [Nala Ginrut](https://github.com/NalaGinrut)
+- [Nekohayo](https://github.com/nekohayo)
+- [Nicolas Lœuillet](https://github.com/nicosomb)
+- [Nramel](https://github.com/nramel)
+- [Null-Kelvin](https://github.com/Null-Kelvin)
+- [Oliver Bertuch](https://github.com/poikilotherm)
+- [Olivier Maridat](https://github.com/oliviermaridat)
+- [Rafaelrossa](https://github.com/rafaelrossa)
+- [Raphaël Doursenaud](https://github.com/rdoursenaud)
+- [Rzeka](https://github.com/rzeka)
+- [Sebastien Pacilly](https://github.com/spacilly)
+- [Sebastian Reese](https://github.com/ReeseSebastian)
+- [Sylvain Veyrié](https://github.com/turb)
+- [Toomyem](https://github.com/Toomyem)
+- [Tony G. Bolaño](https://github.com/tonybolanyo)
+- [Torsten](https://github.com/misterfu)
+- [Troloo](https://github.com/troloo)
+- [Typz](https://github.com/Typz)
+- [Vedovator](https://github.com/vedovator)
+- [Ybarc](https://github.com/ybarc)
+- [Yuichi Murata](https://github.com/yuichi1004)
 
 There is also many people who have reported bugs or proposed awesome ideas.

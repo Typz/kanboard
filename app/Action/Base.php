@@ -13,7 +13,9 @@ use Core\Tool;
  * @author  Frederic Guillot
  *
  * @property \Model\Acl                $acl
+ * @property \Model\Comment            $comment
  * @property \Model\Task               $task
+ * @property \Model\TaskFinder         $taskFinder
  */
 abstract class Base implements Listener
 {

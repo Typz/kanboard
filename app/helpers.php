@@ -6,11 +6,10 @@ namespace Helper;
  * Template helpers
  *
  */
-
 use Core\Security;
 use Core\Template;
 use Core\Tool;
-use Parsedown\Parsedown;
+use Parsedown;
 
 /**
  * Append a CSRF token to a query string
@@ -79,6 +78,16 @@ function is_admin()
 }
 
 /**
+ * Return true if the user can configure the project (project are previously filtered)
+ *
+ * @return boolean
+ */
+function is_project_admin(array $project)
+{
+    return is_admin() || $project['is_private'] == 1;
+}
+
+/**
  * Return the username
  *
  * @param  array    $user   User properties (optional)
@@ -103,17 +112,25 @@ function get_user_id()
 /**
  * Markdown transformation
  *
- * @param  string    $text   Markdown content
+ * @param  string    $text     Markdown content
+ * @param  array     $link     Link parameters for replacement
  * @return string
  */
-function markdown($text)
+function markdown($text, array $link = array('controller' => 'task', 'action' => 'show', 'params' => array()))
 {
     $html = Parsedown::instance()
                 ->setMarkupEscaped(true) # escapes markup (HTML)
                 ->text($text);
 
     // Replace task #123 by a link to the task
-    $html = preg_replace('!#(\d+)!i', '<a href="?controller=task&action=show&task_id=$1">$0</a>', $html);
+    $html = preg_replace_callback('!#(\d+)!i', function($matches) use ($link) {
+        return a(
+            $matches[0],
+            $link['controller'],
+            $link['action'],
+            $link['params'] + array('task_id' => $matches[1])
+        );
+    }, $html);
 
     return $html;
 }
@@ -560,15 +577,15 @@ function form_numeric($name, $values = array(), array $errors = array(), array $
  * @param  string   $class       CSS class attribute
  * @return string
  */
-function a($label, $controller, $action, array $params = array(), $csrf = false, $class = '')
+function a($label, $controller, $action, array $params = array(), $csrf = false, $class = '', $title = '')
 {
-    return '<a href="'.u($controller, $action, $params, $csrf).'" class="'.$class.'"/>'.$label.'</a>';
+    return '<a href="'.u($controller, $action, $params, $csrf).'" class="'.$class.'" title="'.$title.'">'.$label.'</a>';
 }
 
 /**
- * URL
+ * URL query string
  *
- * a('link', 'task', 'show', array('task_id' => $task_id))
+ * u('task', 'show', array('task_id' => $task_id))
  *
  * @param  string   $controller  Controller name
  * @param  string   $action      Action name
@@ -589,4 +606,66 @@ function u($controller, $action, array $params = array(), $csrf = false)
     }
 
     return $html;
+}
+
+/**
+ * Pagination links
+ *
+ * @param  array    $pagination    Pagination information
+ * @return string
+ */
+function paginate(array $pagination)
+{
+    extract($pagination);
+
+    $html = '<div id="pagination">';
+    $html .= '<span id="pagination-previous">';
+
+    if ($pagination['offset'] > 0) {
+        $offset = $pagination['offset'] - $limit;
+        $html .= a('&larr; '.t('Previous'), $controller, $action, $params + compact('offset', 'order', 'direction'));
+    }
+    else {
+        $html .= '&larr; '.t('Previous');
+    }
+
+    $html .= '</span>';
+    $html .= '<span id="pagination-next">';
+
+    if (($total - $pagination['offset']) > $limit) {
+        $offset = $pagination['offset'] + $limit;
+        $html .= a(t('Next').' &rarr;', $controller, $action, $params + compact('offset', 'order', 'direction'));
+    }
+    else {
+        $html .= t('Next').' &rarr;';
+    }
+
+    $html .= '</span>';
+    $html .= '</div>';
+
+    return $html;
+}
+
+/**
+ * Column sorting (work with pagination)
+ *
+ * @param  string   $label         Column title
+ * @param  string   $column        SQL column name
+ * @param  array    $pagination    Pagination information
+ * @return string
+ */
+function order($label, $column, array $pagination)
+{
+    extract($pagination);
+
+    $prefix = '';
+
+    if ($order === $column) {
+        $prefix = $direction === 'DESC' ? '&#9660; ' : '&#9650; ';
+        $direction = $direction === 'DESC' ? 'ASC' : 'DESC';
+    }
+
+    $order = $column;
+
+    return $prefix.a($label, $controller, $action, $params + compact('offset', 'order', 'direction'));
 }

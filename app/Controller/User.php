@@ -59,7 +59,7 @@ class User extends Base
                 $this->response->redirect('?'.$redirect_query);
             }
             else {
-                $this->response->redirect('?controller=board');
+                $this->response->redirect('?controller=app');
             }
         }
 
@@ -84,10 +84,10 @@ class User extends Base
     {
         $content = $this->template->load($template, $params);
         $params['user_content_for_layout'] = $content;
-        $params['menu'] = 'users';
+        $params['board_selector'] = $this->projectPermission->getAllowedProjects($this->acl->getUserId());
 
         if (isset($params['user'])) {
-            $params['title'] = $params['user']['name'] ?: $params['user']['username'];
+            $params['title'] = ($params['user']['name'] ?: $params['user']['username']).' (#'.$params['user']['id'].')';
         }
 
         return $this->template->layout('user_layout', $params);
@@ -121,16 +121,31 @@ class User extends Base
      */
     public function index()
     {
-        $users = $this->user->getAll();
-        $nb_users = count($users);
+        $direction = $this->request->getStringParam('direction', 'ASC');
+        $order = $this->request->getStringParam('order', 'username');
+        $offset = $this->request->getIntegerParam('offset', 0);
+        $limit = 25;
+
+        $users = $this->user->paginate($offset, $limit, $order, $direction);
+        $nb_users = $this->user->count();
 
         $this->response->html(
             $this->template->layout('user_index', array(
+                'board_selector' => $this->projectPermission->getAllowedProjects($this->acl->getUserId()),
                 'projects' => $this->project->getList(),
-                'users' => $users,
                 'nb_users' => $nb_users,
-                'menu' => 'users',
-                'title' => t('Users').' ('.$nb_users.')'
+                'users' => $users,
+                'title' => t('Users').' ('.$nb_users.')',
+                'pagination' => array(
+                    'controller' => 'user',
+                    'action' => 'index',
+                    'direction' => $direction,
+                    'order' => $order,
+                    'total' => $nb_users,
+                    'offset' => $offset,
+                    'limit' => $limit,
+                    'params' => array(),
+                ),
         )));
     }
 
@@ -142,10 +157,10 @@ class User extends Base
     public function create()
     {
         $this->response->html($this->template->layout('user_new', array(
+            'board_selector' => $this->projectPermission->getAllowedProjects($this->acl->getUserId()),
             'projects' => $this->project->getList(),
             'errors' => array(),
             'values' => array(),
-            'menu' => 'users',
             'title' => t('New user')
         )));
     }
@@ -172,10 +187,10 @@ class User extends Base
         }
 
         $this->response->html($this->template->layout('user_new', array(
+            'board_selector' => $this->projectPermission->getAllowedProjects($this->acl->getUserId()),
             'projects' => $this->project->getList(),
             'errors' => $errors,
             'values' => $values,
-            'menu' => 'users',
             'title' => t('New user')
         )));
     }

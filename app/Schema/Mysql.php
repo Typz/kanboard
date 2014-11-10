@@ -5,7 +5,45 @@ namespace Schema;
 use PDO;
 use Core\Security;
 
-const VERSION = 31;
+const VERSION = 34;
+
+function version_34($pdo)
+{
+    $pdo->exec("ALTER TABLE projects ADD COLUMN is_everybody_allowed TINYINT(1) DEFAULT '0'");
+}
+
+function version_33($pdo)
+{
+    $pdo->exec("
+        CREATE TABLE project_activities (
+            id INT NOT NULL AUTO_INCREMENT,
+            date_creation INT NOT NULL,
+            event_name VARCHAR(50) NOT NULL,
+            creator_id INT,
+            project_id INT,
+            task_id INT,
+            data TEXT,
+            PRIMARY KEY(id),
+            FOREIGN KEY(creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB CHARSET=utf8
+    ");
+
+    $pdo->exec('DROP TABLE task_has_events');
+    $pdo->exec('DROP TABLE comment_has_events');
+    $pdo->exec('DROP TABLE subtask_has_events');
+}
+
+function version_32($pdo)
+{
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN date_started INTEGER");
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN time_spent FLOAT DEFAULT 0");
+    $pdo->exec("ALTER TABLE tasks ADD COLUMN time_estimated FLOAT DEFAULT 0");
+
+    $pdo->exec("ALTER TABLE task_has_subtasks MODIFY time_estimated FLOAT");
+    $pdo->exec("ALTER TABLE task_has_subtasks MODIFY time_spent FLOAT");
+}
 
 function version_31($pdo)
 {
@@ -345,7 +383,7 @@ function version_1($pdo)
             id INT NOT NULL AUTO_INCREMENT,
             task_id INT,
             user_id INT,
-            date INT,
+            `date` INT,
             comment TEXT,
             PRIMARY KEY (id),
             FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,

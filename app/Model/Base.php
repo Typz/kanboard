@@ -32,8 +32,10 @@ use PicoDb\Database;
  * @property \Model\SubtaskHistory     $subtaskHistory
  * @property \Model\Task               $task
  * @property \Model\TaskExport         $taskExport
+ * @property \Model\TaskFinder         $taskFinder
  * @property \Model\TaskHistory        $taskHistory
  * @property \Model\TaskValidator      $taskValidator
+ * @property \Model\TimeTracking       $timeTracking
  * @property \Model\User               $user
  * @property \Model\Webhook            $webhook
  */

@@ -29,9 +29,9 @@ class ProjectPermission extends Base
      * @param  bool      $prepend_everybody     Prepend the 'Everbody' value
      * @return array
      */
-    public function getUsersList($project_id, $prepend_unassigned = true, $prepend_everybody = false)
+    public function getMemberList($project_id, $prepend_unassigned = true, $prepend_everybody = false)
     {
-        $allowed_users = $this->getAllowedUsers($project_id);
+        $allowed_users = $this->getMembers($project_id);
 
         if ($prepend_unassigned) {
             $allowed_users = array(t('Unassigned')) + $allowed_users;
@@ -51,7 +51,23 @@ class ProjectPermission extends Base
      * @param  integer   $project_id   Project id
      * @return array
      */
-    public function getAllowedUsers($project_id)
+    public function getMembers($project_id)
+    {
+        if ($this->isEverybodyAllowed($project_id)) {
+            return $this->user->getList();
+        }
+
+        return $this->getAssociatedUsers($project_id);
+    }
+
+    /**
+     * Get a list of people associated to the project
+     *
+     * @access public
+     * @param  integer   $project_id   Project id
+     * @return array
+     */
+    public function getAssociatedUsers($project_id)
     {
         $users = $this->db
             ->table(self::TABLE)
@@ -61,15 +77,7 @@ class ProjectPermission extends Base
             ->columns(User::TABLE.'.id', User::TABLE.'.username', User::TABLE.'.name')
             ->findAll();
 
-        $result = array();
-
-        foreach ($users as $user) {
-            $result[$user['id']] = $user['name'] ?: $user['username'];
-        }
-
-        asort($result);
-
-        return $result;
+        return $this->user->prepareList($users);
     }
 
     /**
@@ -88,7 +96,7 @@ class ProjectPermission extends Base
 
         $all_users = $this->user->getList();
 
-        $users['allowed'] = $this->getAllowedUsers($project_id);
+        $users['allowed'] = $this->getMembers($project_id);
 
         foreach ($all_users as $user_id => $username) {
 
@@ -133,6 +141,27 @@ class ProjectPermission extends Base
     }
 
     /**
+     * Check if a specific user is member of a project
+     *
+     * @access public
+     * @param  integer   $project_id   Project id
+     * @param  integer   $user_id      User id
+     * @return bool
+     */
+    public function isMember($project_id, $user_id)
+    {
+        if ($this->isEverybodyAllowed($project_id)) {
+            return true;
+        }
+
+        return (bool) $this->db
+                    ->table(self::TABLE)
+                    ->eq('project_id', $project_id)
+                    ->eq('user_id', $user_id)
+                    ->count();
+    }
+
+    /**
      * Check if a specific user is allowed to access to a given project
      *
      * @access public
@@ -142,14 +171,22 @@ class ProjectPermission extends Base
      */
     public function isUserAllowed($project_id, $user_id)
     {
-        if ($this->user->isAdmin($user_id)) {
-            return true;
-        }
+        return $this->user->isAdmin($user_id) || $this->isMember($project_id, $user_id);
+    }
 
+    /**
+     * Return true if everybody is allowed for the project
+     *
+     * @access public
+     * @param  integer   $project_id   Project id
+     * @return bool
+     */
+    public function isEverybodyAllowed($project_id)
+    {
         return (bool) $this->db
-                    ->table(self::TABLE)
-                    ->eq('project_id', $project_id)
-                    ->eq('user_id', $user_id)
+                    ->table(Project::TABLE)
+                    ->eq('id', $project_id)
+                    ->eq('is_everybody_allowed', 1)
                     ->count();
     }
 
@@ -176,12 +213,13 @@ class ProjectPermission extends Base
      * @access public
      * @param  array     $projects     Project list: ['project_id' => 'project_name']
      * @param  integer   $user_id      User id
+     * @param  string    $filter       Method name to apply
      * @return array
      */
-    public function filterProjects(array $projects, $user_id)
+    public function filterProjects(array $projects, $user_id, $filter = 'isUserAllowed')
     {
         foreach ($projects as $project_id => $project_name) {
-            if (! $this->isUserAllowed($project_id, $user_id)) {
+            if (! $this->$filter($project_id, $user_id)) {
                 unset($projects[$project_id]);
             }
         }
@@ -190,7 +228,7 @@ class ProjectPermission extends Base
     }
 
     /**
-     * Return a list of projects for a given user
+     * Return a list of allowed projects for a given user
      *
      * @access public
      * @param  integer   $user_id      User id
@@ -198,7 +236,19 @@ class ProjectPermission extends Base
      */
     public function getAllowedProjects($user_id)
     {
-        return $this->filterProjects($this->project->getListByStatus(Project::ACTIVE), $user_id);
+        return $this->filterProjects($this->project->getListByStatus(Project::ACTIVE), $user_id, 'isUserAllowed');
+    }
+
+    /**
+     * Return a list of projects where the user is member
+     *
+     * @access public
+     * @param  integer   $user_id      User id
+     * @return array
+     */
+    public function getMemberProjects($user_id)
+    {
+        return $this->filterProjects($this->project->getListByStatus(Project::ACTIVE), $user_id, 'isMember');
     }
 
     /**
@@ -211,7 +261,7 @@ class ProjectPermission extends Base
      */
     public function duplicate($project_from, $project_to)
     {
-        $users = $this->getAllowedUsers($project_from);
+        $users = $this->getMembers($project_from);
 
         foreach ($users as $user_id => $name) {
             if (! $this->allowUser($project_to, $user_id)) {
@@ -223,19 +273,40 @@ class ProjectPermission extends Base
     }
 
     /**
-     * Validate allowed users
+     * Validate allow user
      *
      * @access public
      * @param  array   $values           Form values
      * @return array   $valid, $errors   [0] = Success or not, [1] = List of errors
      */
-    public function validateModification(array $values)
+    public function validateUserModification(array $values)
     {
         $v = new Validator($values, array(
             new Validators\Required('project_id', t('The project id is required')),
             new Validators\Integer('project_id', t('This value must be an integer')),
             new Validators\Required('user_id', t('The user id is required')),
             new Validators\Integer('user_id', t('This value must be an integer')),
+        ));
+
+        return array(
+            $v->execute(),
+            $v->getErrors()
+        );
+    }
+
+    /**
+     * Validate allow everybody
+     *
+     * @access public
+     * @param  array   $values           Form values
+     * @return array   $valid, $errors   [0] = Success or not, [1] = List of errors
+     */
+    public function validateProjectModification(array $values)
+    {
+        $v = new Validator($values, array(
+            new Validators\Required('id', t('The project id is required')),
+            new Validators\Integer('id', t('This value must be an integer')),
+            new Validators\Integer('is_everybody_allowed', t('This value must be an integer')),
         ));
 
         return array(

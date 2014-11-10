@@ -45,6 +45,7 @@ class Config extends Base
     {
         // Sorted by value
         return array(
+            'da_DK' => 'Dansk',
             'de_DE' => 'Deutsch',
             'en_US' => 'English',
             'es_ES' => 'Español',
@@ -56,6 +57,8 @@ class Config extends Base
             'fi_FI' => 'Suomi',
             'sv_SE' => 'Svenska',
             'zh_CN' => '中文(简体)',
+            'ja_JP' => '日本語',
+            'th_TH' => 'ไทย',
         );
     }
 

@@ -1,8 +1,10 @@
 Update
 ======
 
-From the archive
-----------------
+Important: **Always do a backup of your database before upgrading!**
+
+From the archive (stable version)
+---------------------------------
 
 1. Close your session (logout)
 2. Rename your actual Kanboard directory (to keep a backup)
@@ -11,9 +13,13 @@ From the archive
 5. Login and check if everything is ok
 6. Remove the old Kanboard directory
 
-From the repository
--------------------
+
+From the repository (development version)
+-----------------------------------------
 
 1. Close your session (logout)
 2. `git pull`
+3. `composer update`
 3. Login and check if everything is ok
+
+Note: This method will install the **current development version**, use at your own risk.

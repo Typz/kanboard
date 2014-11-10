@@ -1,9 +1,6 @@
 <?php
 
-require_once __DIR__.'/../../vendor/PicoDb/Database.php';
-require_once __DIR__.'/../../vendor/JsonRPC/Client.php';
-require_once __DIR__.'/../../app/Core/Security.php';
-require_once __DIR__.'/../../app/functions.php';
+require_once __DIR__.'/../../vendor/autoload.php';
 
 class Api extends PHPUnit_Framework_TestCase
 {
@@ -164,7 +161,8 @@ class Api extends PHPUnit_Framework_TestCase
             'column_id' => 2,
         );
 
-        $this->assertTrue($this->client->execute('createTask', $task));
+        //$this->assertTrue($this->client->execute('createTask', $task));
+        $this->assertTrue($this->client->createTask($task));
     }
 
     /**

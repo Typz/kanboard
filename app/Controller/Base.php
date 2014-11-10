@@ -26,14 +26,17 @@ use Model\LastLogin;
  * @property \Model\Notification       $notification
  * @property \Model\Project            $project
  * @property \Model\ProjectPermission  $projectPermission
+ * @property \Model\ProjectAnalytic    $projectAnalytic
  * @property \Model\SubTask            $subTask
  * @property \Model\Task               $task
  * @property \Model\TaskHistory        $taskHistory
  * @property \Model\TaskExport         $taskExport
+ * @property \Model\TaskFinder         $taskFinder
  * @property \Model\TaskPermission     $taskPermission
  * @property \Model\TaskValidator      $taskValidator
  * @property \Model\CommentHistory     $commentHistory
  * @property \Model\SubtaskHistory     $subtaskHistory
+ * @property \Model\TimeTracking       $timeTracking
  * @property \Model\User               $user
  * @property \Model\Webhook            $webhook
  */
@@ -151,13 +154,11 @@ abstract class Base
     private function attachEvents()
     {
         $models = array(
+            'projectActivity', // Order is important
             'action',
             'project',
             'webhook',
             'notification',
-            'taskHistory',
-            'commentHistory',
-            'subtaskHistory',
         );
 
         foreach ($models as $model) {
@@ -173,7 +174,7 @@ abstract class Base
      */
     public function notfound($no_layout = false)
     {
-        $this->response->html($this->template->layout('app_notfound', array(
+        $this->response->html($this->template->layout('app/notfound', array(
             'title' => t('Page not found'),
             'no_layout' => $no_layout,
         )));
@@ -187,7 +188,7 @@ abstract class Base
      */
     public function forbidden($no_layout = false)
     {
-        $this->response->html($this->template->layout('app_forbidden', array(
+        $this->response->html($this->template->layout('app/forbidden', array(
             'title' => t('Access Forbidden'),
             'no_layout' => $no_layout,
         )));
@@ -245,6 +246,8 @@ abstract class Base
 
         $content = $this->template->load($template, $params);
         $params['task_content_for_layout'] = $content;
+        $params['title'] = $params['task']['project_name'].' &gt; '.$params['task']['title'];
+        $params['board_selector'] = $this->projectPermission->getAllowedProjects($this->acl->getUserId());
 
         return $this->template->layout('task_layout', $params);
     }
@@ -261,7 +264,8 @@ abstract class Base
     {
         $content = $this->template->load($template, $params);
         $params['project_content_for_layout'] = $content;
-        $params['menu'] = 'projects';
+        $params['title'] = $params['project']['name'] === $params['title'] ? $params['title'] : $params['project']['name'].' &gt; '.$params['title'];
+        $params['board_selector'] = $this->projectPermission->getAllowedProjects($this->acl->getUserId());
 
         return $this->template->layout('project_layout', $params);
     }
@@ -274,7 +278,7 @@ abstract class Base
      */
     protected function getTask()
     {
-        $task = $this->task->getDetails($this->request->getIntegerParam('task_id'));
+        $task = $this->taskFinder->getDetails($this->request->getIntegerParam('task_id'));
 
         if (! $task) {
             $this->notfound();

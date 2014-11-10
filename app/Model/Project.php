@@ -4,7 +4,7 @@ namespace Model;
 
 use SimpleValidator\Validator;
 use SimpleValidator\Validators;
-use Event\ProjectModificationDate;
+use Event\ProjectModificationDateListener;
 use Core\Security;
 
 /**
@@ -93,6 +93,40 @@ class Project extends Base
     public function isPrivate($project_id)
     {
         return (bool) $this->db->table(self::TABLE)->eq('id', $project_id)->eq('is_private', 1)->count();
+    }
+
+    /**
+     * Get project summary for a list of project (number of tasks for each column)
+     *
+     * @access public
+     * @param  array     $project_ids     List of project id
+     * @param  integer   $status          Project status
+     * @param  string    $order           Sort on this column
+     * @param  string    $direction       Sorting direction
+     * @return array                      Project properties
+     */
+    public function getSummary(array $project_ids, $status = self::ACTIVE, $order = 'name', $direction = 'asc')
+    {
+        if (empty($project_ids)) {
+            return array();
+        }
+
+        $projects = $this->db->table(self::TABLE)
+                             ->in('id', $project_ids)
+                             ->eq('is_active', $status)
+                             ->orderby($order, $direction)
+                             ->findAll();
+
+        foreach ($projects as &$project) {
+
+            $project['columns'] = $this->board->getColumns($project['id']);
+
+            foreach ($project['columns'] as &$column) {
+                $column['nb_tasks'] = $this->taskFinder->countByColumnId($project['id'], $column['id']);
+            }
+        }
+
+        return $projects;
     }
 
     /**
@@ -192,16 +226,16 @@ class Project extends Base
     public function getStats($project_id)
     {
         $stats = array();
-        $columns = $this->board->getcolumns($project_id);
+        $columns = $this->board->getColumns($project_id);
         $stats['nb_active_tasks'] = 0;
 
         foreach ($columns as &$column) {
-            $column['nb_active_tasks'] = $this->task->countByColumnId($project_id, $column['id']);
+            $column['nb_active_tasks'] = $this->taskFinder->countByColumnId($project_id, $column['id']);
             $stats['nb_active_tasks'] += $column['nb_active_tasks'];
         }
 
         $stats['columns'] = $columns;
-        $stats['nb_tasks'] = $this->task->countByProjectId($project_id);
+        $stats['nb_tasks'] = $this->taskFinder->countByProjectId($project_id);
         $stats['nb_inactive_tasks'] = $stats['nb_tasks'] - $stats['nb_active_tasks'];
 
         return $stats;
@@ -512,41 +546,10 @@ class Project extends Base
             GithubWebhook::EVENT_COMMIT,
         );
 
-        $listener = new ProjectModificationDate($this);
+        $listener = new ProjectModificationDateListener($this->registry);
 
         foreach ($events as $event_name) {
             $this->event->attach($event_name, $listener);
         }
-    }
-
-    /**
-     * Get project activity
-     *
-     * @access public
-     * @param  integer   $project_id   Project id
-     * @return array
-     */
-    public function getActivity($project_id)
-    {
-        $activity = array();
-        $tasks = $this->taskHistory->getAllContentByProjectId($project_id, 25);
-        $comments = $this->commentHistory->getAllContentByProjectId($project_id, 25);
-        $subtasks = $this->subtaskHistory->getAllContentByProjectId($project_id, 25);
-
-        foreach ($tasks as &$task) {
-            $activity[$task['date_creation'].'-'.$task['id']] = $task;
-        }
-
-        foreach ($subtasks as &$subtask) {
-            $activity[$subtask['date_creation'].'-'.$subtask['id']] = $subtask;
-        }
-
-        foreach ($comments as &$comment) {
-            $activity[$comment['date_creation'].'-'.$comment['id']] = $comment;
-        }
-
-        krsort($activity);
-
-        return $activity;
     }
 }
