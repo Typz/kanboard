@@ -99,6 +99,10 @@ a.task-board-nobody {
     opacity: 1.0;
 }
 
+.task-board-icons * + * {
+    margin-left: 3px;
+}
+
 /* task score */
 .task-score {
     font-weight: bold;

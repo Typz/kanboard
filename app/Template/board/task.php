@@ -90,15 +90,15 @@
     <div class="task-board-icons">
 
         <?php if (! empty($task['nb_subtasks'])): ?>
-            <span title="<?= t('Sub-Tasks') ?>"><?= $task['nb_completed_subtasks'].'/'.$task['nb_subtasks'] ?> <i class="fa fa-bars"></i></span>
+            <span title="<?= t('Sub-Tasks') ?>"><i class="fa fa-bars"></i><?= $task['nb_completed_subtasks'].'/'.$task['nb_subtasks'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['nb_files'])): ?>
-            <span title="<?= t('Attachments') ?>"><?= $task['nb_files'] ?> <i class="fa fa-paperclip"></i></span>
+            <span title="<?= t('Attachments') ?>"><i class="fa fa-paperclip"></i><?= $task['nb_files'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['nb_comments'])): ?>
-            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"><?= $task['nb_comments'] ?> <i class="fa fa-comment-o"></i></span>
+            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>"><i class="fa fa-comment-o"></i><?= $task['nb_comments'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
