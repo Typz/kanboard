@@ -8,7 +8,26 @@
     </span>
     <?php endif ?>
 
-    &nbsp;-&nbsp;
+	&nbsp;-&nbsp;
+
+    <div class="task-board-category-container">
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category">
+                <?= Helper\a(
+                    Helper\in_list($task['category_id'], $categories),
+                    'board',
+                    'changeCategory',
+                    array('task_id' => $task['id']),
+                    false,
+                    'category-popover',
+                    t('Change category')
+                ) ?>
+            </span>
+		<?php endif ?>
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+    </div>
 
     <span class="task-board-user">
     <?php if (! empty($task['owner_id'])): ?>
@@ -18,9 +37,6 @@
     <?php endif ?>
     </span>
 
-    <?php if ($task['score']): ?>
-        <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-    <?php endif ?>
 
     <div class="task-board-title">
         <?= Helper\a(Helper\escape($task['title']), 'task', 'readonly', array('task_id' => $task['id'], 'token' => $project['token'])) ?>
@@ -38,6 +54,25 @@
 
     &nbsp;-&nbsp;
 
+    <div class="task-board-category-container">
+        <?php if ($task['category_id']): ?>
+            <span class="task-board-category">
+                <?= Helper\a(
+                    Helper\in_list($task['category_id'], $categories),
+                    'board',
+                    'changeCategory',
+                    array('task_id' => $task['id']),
+                    false,
+                    'category-popover',
+                    t('Change category')
+                ) ?>
+            </span>
+		<?php endif ?>
+        <?php if ($task['score']): ?>
+            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+        <?php endif ?>
+    </div>
+
     <span class="task-board-user">
         <?= Helper\a(
             ! empty($task['owner_id']) ? t('Assigned to %s', $task['assignee_name'] ?: $task['assignee_username']) : t('Nobody assigned'),
@@ -50,33 +85,11 @@
         ) ?>
     </span>
 
-    <?php if ($task['score']): ?>
-        <span class="task-score"><?= Helper\escape($task['score']) ?></span>
-    <?php endif ?>
-
     <div class="task-board-title">
         <?= Helper\a(Helper\escape($task['title']), 'task', 'show', array('task_id' => $task['id']), false, '', t('View this task')) ?>
     </div>
 
 <?php endif ?>
-
-
-<?php if ($task['category_id']): ?>
-<div class="task-board-category-container">
-    <span class="task-board-category">
-        <?= Helper\a(
-            Helper\in_list($task['category_id'], $categories),
-            'board',
-            'changeCategory',
-            array('task_id' => $task['id']),
-            false,
-            'category-popover',
-            t('Change category')
-        ) ?>
-    </span>
-</div>
-<?php endif ?>
-
 
 <?php if (! empty($task['date_due']) || ! empty($task['nb_files']) || ! empty($task['nb_comments']) || ! empty($task['description']) || ! empty($task['nb_subtasks'])): ?>
 <div class="task-board-footer">

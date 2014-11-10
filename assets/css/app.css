@@ -593,6 +593,7 @@ a.filter-on {
     background: #fafafa;
     height: 70px;
     margin-bottom: 10px;
+    border-radius: 4px;
 }
 /* project view */
 .project-listing {
@@ -631,6 +632,7 @@ a.filter-on {
     padding: 5px;
     font-size: 95%;
     word-wrap: break-word;
+    border-radius: 4px;
 }
 
 div.task-board-recent {
@@ -652,7 +654,7 @@ div.task-board-recent {
 }
 
 .task-board-title {
-    margin-top: 10px;
+    margin-top: 5px;
     font-size: 110%;
 }
 
@@ -671,9 +673,13 @@ a.task-board-nobody {
 }
 
 .task-board-category-container {
-    text-align: right;
+    text-align: center;
     padding-bottom: 2px;
-    margin-top: 10px;
+    float: right;
+}
+
+.task-board-category-container * + * {
+    margin-left: 3px;
 }
 
 .task-board-category {
@@ -693,7 +699,7 @@ a.task-board-nobody {
 
 .task-board-date {
     position: absolute;
-    bottom: 0;
+    bottom: 2px;
     left: 5px;
     font-weight: bold;
     color: #000;
@@ -705,7 +711,7 @@ a.task-board-nobody {
 
 .task-board-icons {
     position: absolute;
-    bottom: 0;
+    bottom: 2px;
     right: 5px;
 }
 
@@ -727,16 +733,19 @@ a.task-board-nobody {
     margin-left: 3px;
 }
 
+.task-board-icons i {
+    font-size:105%;
+}
+
 /* task score */
 .task-score {
     font-weight: bold;
-    position: absolute;
 }
 
 .task-board .task-score {
     font-size: 1.5em;
-    right: 5px;
-    top: 0;
+    vertical-align: middle;
+    line-height: 0.9em;
 }
 
 /* task view */
@@ -764,6 +773,7 @@ a.task-board-nobody {
     font-size: 1.9em;
     right: 10px;
     bottom: 5px;
+    position: absolute;
 }
 
 .task-show-section {
