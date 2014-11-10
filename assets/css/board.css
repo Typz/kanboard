@@ -4,6 +4,11 @@ a.filter-on {
     color: #333;
 }
 
+.board-filters {
+    float:right;
+    padding-top:10px
+}
+
 /* public board */
 .public-board {
     margin-top: 5px;

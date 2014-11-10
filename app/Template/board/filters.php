@@ -1,5 +1,5 @@
 <div class="page-header">
-    <ul>
+    <ul class="board-filters">
         <li>
             <?= t('Filter by user') ?>
             <?= Helper\form_select('user_id', $users) ?>
@@ -11,6 +11,8 @@
         <li>
             <a href="#" id="filter-due-date"><?= t('Filter by due date') ?></a>
         </li>
+    </ul>
+    <ul>
         <li>
             <i class="fa fa-search"></i>
             <?= Helper\a(t('Search'), 'project', 'search', array('project_id' => $project['id'])) ?>
