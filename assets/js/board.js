@@ -3,6 +3,11 @@ Kanboard.Board = (function() {
 
     var checkInterval = null;
 
+    function on_popover(e)
+    {
+        Kanboard.Popover(e, Kanboard.Init);
+    }
+
     // Setup the board
     function board_load_events()
     {
@@ -28,57 +33,72 @@ Kanboard.Board = (function() {
         $(".category-popover").click(Kanboard.Popover);
 
         // Task edit popover
-        $(".task-edit-popover").click(function(e) {
-            Kanboard.Popover(e, Kanboard.Init);
-        });
+        $(".task-edit-popover").click(on_popover);
+        $(".task-creation-popover").click(on_popover);
 
         // Description popover
-        $(".task-description-popover").click(Kanboard.Popover);
+        $(".task-description-popover").click(on_popover);
 
         // Tooltips
         $(".task-board-tooltip").tooltip({
             track: false,
-            position: { my: 'left-20 top', at: 'center bottom+9', using: function( position, feedback ) {
-                $( this ).css( position );
-                var arrow_pos = feedback.target.left + feedback.target.width / 2 - feedback.element.left - 20
-                $( "<div>" )
-                    .addClass("tooltip-arrow")
-                    .addClass(feedback.vertical)
-                    .addClass(arrow_pos == 0 ? "align-left" : "align-right")
-                    .appendTo(this);
-            }},
+            position: {
+                my: 'left-20 top',
+                at: 'center bottom+9',
+                using: function(position, feedback) {
+
+                    $(this).css(position);
+
+                    var arrow_pos = feedback.target.left + feedback.target.width / 2 - feedback.element.left - 20;
+
+                    $("<div>")
+                        .addClass("tooltip-arrow")
+                        .addClass(feedback.vertical)
+                        .addClass(arrow_pos == 0 ? "align-left" : "align-right")
+                        .appendTo(this);
+                }
+            },
             content: function(e) {
-                var content = $(this).attr('data-content');
-                 if (content)
-                    return content;
-                var href = $(this).attr('href');
-                if (!href)
+                var href = $(this).attr('data-href');
+
+                if (! href) {
                     return;
-                element = $(this)
+                }
+
                 $.get(href, function setTooltipContent(data) {
+
                     $('.ui-tooltip-content:visible').html(data);
-                    $('.ui-tooltip-content:visible a').click(function(e) {
+
+                    // Toggle subtasks status
+                    $('#tooltip-subtasks a').click(function(e) {
+
                         e.preventDefault();
                         e.stopPropagation();
-                        var href = $(this).attr('href');
-                        $.get(href, setTooltipContent);
+
+                        $.get($(this).attr('href'), setTooltipContent);
                     });
                 });
+
                 return '<i class="fa fa-refresh fa-spin fa-2x"></i>';
             }
-        }).on("mouseenter", function () {
+        }).on("mouseenter", function() {
+
             var _this = this;
             $(this).tooltip("open");
+
             $(".ui-tooltip").on("mouseleave", function () {
                 $(_this).tooltip('close');
             });
-        }).on("mouseleave focusout", function (e) {
-            e.stopImmediatePropagation();
 
+        }).on("mouseleave focusout", function (e) {
+
+            e.stopImmediatePropagation();
             var _this = this;
+
             setTimeout(function () {
-                if (!$(".ui-tooltip:hover").length)
+                if (! $(".ui-tooltip:hover").length) {
                     $(_this).tooltip("close");
+                }
             }, 100);
         });
 

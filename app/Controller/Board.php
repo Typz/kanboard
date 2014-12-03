@@ -62,7 +62,7 @@ class Board extends Base
 
         list($valid,) = $this->taskValidator->validateAssigneeModification($values);
 
-        if ($valid && $this->task->update($values)) {
+        if ($valid && $this->taskModification->update($values)) {
             $this->session->flash(t('Task updated successfully.'));
         }
         else {
@@ -101,7 +101,7 @@ class Board extends Base
 
         list($valid,) = $this->taskValidator->validateCategoryModification($values);
 
-        if ($valid && $this->task->update($values)) {
+        if ($valid && $this->taskModification->update($values)) {
             $this->session->flash(t('Task updated successfully.'));
         }
         else {
@@ -342,12 +342,12 @@ class Board extends Base
         if ($project_id > 0 && $this->request->isAjax()) {
 
             if (! $this->projectPermission->isUserAllowed($project_id, $this->acl->getUserId())) {
-                $this->response->status(401);
+                $this->response->text('Forbidden', 403);
             }
 
             $values = $this->request->getJson();
 
-            if ($this->task->movePosition($project_id, $values['task_id'], $values['column_id'], $values['position'])) {
+            if ($this->taskPosition->movePosition($project_id, $values['task_id'], $values['column_id'], $values['position'])) {
 
                 $this->response->html(
                     $this->template->load('board/show', array(
@@ -366,7 +366,7 @@ class Board extends Base
             }
         }
         else {
-            $this->response->status(401);
+            $this->response->status(403);
         }
     }
 
@@ -383,7 +383,7 @@ class Board extends Base
             $timestamp = $this->request->getIntegerParam('timestamp');
 
             if ($project_id > 0 && ! $this->projectPermission->isUserAllowed($project_id, $this->acl->getUserId())) {
-                $this->response->text('Not Authorized', 401);
+                $this->response->text('Forbidden', 403);
             }
 
             if ($this->project->isModifiedSince($project_id, $timestamp)) {
@@ -402,53 +402,77 @@ class Board extends Base
             }
         }
         else {
-            $this->response->status(401);
+            $this->response->status(403);
         }
     }
 
-    public function getSubtasks() {
+    /**
+     * Get subtasks on mouseover
+     *
+     * @access public
+     */
+    public function subtasks()
+    {
         $task = $this->getTask();
-        $values = $this->request->getValues();
         $this->response->html($this->template->load('board/subtasks', array(
-            'values' => $values,
-            'task' => $task,
             'subtasks' => $this->subTask->getAll($task['id'])
         )));
     }
 
-    public function toggleSubtask() {
-        $subtask = $this->subTask->getById($this->request->getIntegerParam('subtask_id'));
-        $value = array( 'id' => $subtask['id'],
-                        'status' => ($subtask['status'] + 1) % 3 );
-        if (!$this->subTask->update($value))
-            $this->session->flashError(t('Unable to change sub-task state.'));
-
+    /**
+     * Change the status of a subtask from the mouseover
+     *
+     * @access public
+     */
+    public function toggleSubtask()
+    {
         $task = $this->getTask();
-        $values = $this->request->getValues();
+        $this->subTask->toggleStatus($this->request->getIntegerParam('subtask_id'));
+
         $this->response->html($this->template->load('board/subtasks', array(
-            'values' => $values,
-            'task' => $task,
             'subtasks' => $this->subTask->getAll($task['id'])
         )));
     }
 
-    public function getAttachments() {
+    /**
+     * Display all attachments during the task mouseover
+     *
+     * @access public
+     */
+    public function attachments()
+    {
         $task = $this->getTask();
-        $values = $this->request->getValues();
+
         $this->response->html($this->template->load('board/files', array(
-            'values' => $values,
-            'task' => $task,
             'files' => $this->file->getAll($task['id'])
         )));
     }
 
-    public function getComments() {
+    /**
+     * Display comments during a task mouseover
+     *
+     * @access public
+     */
+    public function comments()
+    {
         $task = $this->getTask();
-        $values = $this->request->getValues();
+
         $this->response->html($this->template->load('board/comments', array(
-            'values' => $values,
-            'task' => $task,
             'comments' => $this->comment->getAll($task['id'])
+        )));
+    }
+
+    /**
+     * Display the description
+     *
+     * @access public
+     */
+    public function description()
+    {
+        $task = $this->getTask();
+
+        $this->response->html($this->template->load('board/description', array(
+            'task' => $task
         )));
     }
 }

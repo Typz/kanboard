@@ -5,9 +5,9 @@ Requirements
 ------------
 
 - Apache or Nginx
-- PHP >= 5.3.3
+- PHP >= 5.3.7
 - PHP extensions required: mbstring and pdo_sqlite (don't forget to enable extensions)
-- A web browser with HTML5 drag and drop support
+- A modern web browser
 
 From the archive (stable version)
 ---------------------------------
@@ -28,7 +28,7 @@ From the repository (development version)
 You must install [composer](https://getcomposer.org/) to use this method.
 
 1. `git clone https://github.com/fguillot/kanboard.git`
-2. `composer update`
+2. `composer install`
 3. Go to the third step just above
 
 Note: This method will install the **current development version**, use at your own risk.

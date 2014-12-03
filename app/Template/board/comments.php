@@ -1,6 +1,6 @@
 <section>
     <?php foreach ($comments as $comment): ?>
-        <p class="comment-title" style="">
+        <p class="comment-title">
             <span class="comment-username"><?= Helper\escape($comment['name'] ?: $comment['username']) ?></span> @ <span class="comment-date"><?= dt('%b %e, %Y, %k:%M %p', $comment['date']) ?></span>
         </p>
 

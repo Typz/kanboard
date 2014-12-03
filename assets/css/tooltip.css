@@ -1,13 +1,14 @@
 /* tooltip */
-.ui-tooltip, .tooltip-arrow:after {
-    background: white;
-    border: 2px solid #aaaaaa;
+.tooltip-arrow:after {
+    background: #fff;
+    border: 1px solid #aaaaaa;
     box-shadow: 0 0 5px #aaa;
 }
 
 div.ui-tooltip {
     min-width: 20px;
-    max-width: 400px;
+    max-width: 600px;
+    font-size: 0.95em;
     word-wrap: break-word;
 }
 
@@ -58,4 +59,12 @@ div.ui-tooltip {
 
 .tooltip-arrow.align-right:after {
     right: 0px;
+}
+
+.tooltip-large {
+    /*width: 550px;*/
+}
+
+.ui-tooltip-content .markdown p {
+    margin-bottom: 0px;
 }

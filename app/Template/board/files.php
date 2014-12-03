@@ -1,6 +1,14 @@
 <section>
     <?php foreach ($files as $file): ?>
-		<i class="fa fa-file-o" style="display:inline"></i>&nbsp;<a href="?controller=file&amp;action=download&amp;file_id=<?= $file['id'] ?>&amp;task_id=<?= $task['id'] ?>"><?= Helper\escape($file['name']) ?></a>
-		<br>
+		<i class="fa fa-file-o fa-fw"></i>
+
+        <?= Helper\a(
+            Helper\escape($file['name']),
+            'file',
+            'download',
+            array('file_id' => $file['id'], 'task_id' => $file['task_id'])
+        ) ?>
+
+        <br/>
     <?php endforeach ?>
 </section>

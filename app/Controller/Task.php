@@ -86,22 +86,28 @@ class Task extends Base
      *
      * @access public
      */
-    public function create()
+    public function create(array $values = array(), array $errors = array())
     {
         $project = $this->getProject();
+        $method = $this->request->isAjax() ? 'load' : 'layout';
 
-        $this->response->html($this->template->layout('task_new', array(
-            'errors' => array(),
-            'values' => array(
-                'project_id' => $project['id'],
+        if (empty($values)) {
+
+            $values = array(
                 'column_id' => $this->request->getIntegerParam('column_id'),
                 'color_id' => $this->request->getStringParam('color_id'),
                 'owner_id' => $this->request->getIntegerParam('owner_id'),
                 'another_task' => $this->request->getIntegerParam('another_task'),
-            ),
+            );
+        }
+
+        $this->response->html($this->template->$method('task_new', array(
+            'ajax' => $this->request->isAjax(),
+            'errors' => $errors,
+            'values' => $values + array('project_id' => $project['id']),
             'projects_list' => $this->project->getListByStatus(ProjectModel::ACTIVE),
             'columns_list' => $this->board->getColumnsList($project['id']),
-            'users_list' => $this->projectPermission->getMemberList($project['id']),
+            'users_list' => $this->projectPermission->getMemberList($project['id'], true, false, true),
             'colors_list' => $this->color->getList(),
             'categories_list' => $this->category->getList($project['id']),
             'date_format' => $this->config->get('application_date_format'),
@@ -121,13 +127,13 @@ class Task extends Base
         $values = $this->request->getValues();
         $values['creator_id'] = $this->acl->getUserId();
 
-        $this->checkProjectPermissions($values['project_id']);
+        $this->checkProjectPermissions($project['id']);
 
         list($valid, $errors) = $this->taskValidator->validateCreation($values);
 
         if ($valid) {
 
-            if ($this->task->create($values)) {
+            if ($this->taskCreation->create($values)) {
                 $this->session->flash(t('Task created successfully.'));
 
                 if (isset($values['another_task']) && $values['another_task'] == 1) {
@@ -144,18 +150,7 @@ class Task extends Base
             }
         }
 
-        $this->response->html($this->template->layout('task_new', array(
-            'errors' => $errors,
-            'values' => $values,
-            'projects_list' => $this->project->getListByStatus(ProjectModel::ACTIVE),
-            'columns_list' => $this->board->getColumnsList($project['id']),
-            'users_list' => $this->projectPermission->getMemberList($project['id']),
-            'colors_list' => $this->color->getList(),
-            'categories_list' => $this->category->getList($project['id']),
-            'date_format' => $this->config->get('application_date_format'),
-            'date_formats' => $this->dateParser->getAvailableFormats(),
-            'title' => $project['name'].' &gt; '.t('New task')
-        )));
+        $this->create($values, $errors);
     }
 
     /**
@@ -204,7 +199,7 @@ class Task extends Base
 
         if ($valid) {
 
-            if ($this->task->update($values)) {
+            if ($this->taskModification->update($values)) {
                 $this->session->flash(t('Task updated successfully.'));
 
                 if ($this->request->getIntegerParam('ajax')) {
@@ -243,9 +238,9 @@ class Task extends Base
         $task = $this->getTask();
         $values = $this->request->getValues();
 
-        list($valid, $errors) = $this->taskValidator->validateTimeModification($values);
+        list($valid,) = $this->taskValidator->validateTimeModification($values);
 
-        if ($valid && $this->task->update($values)) {
+        if ($valid && $this->taskModification->update($values)) {
             $this->session->flash(t('Task updated successfully.'));
         }
         else {
@@ -268,7 +263,7 @@ class Task extends Base
 
             $this->checkCSRFParam();
 
-            if ($this->task->close($task['id'])) {
+            if ($this->taskStatus->close($task['id'])) {
                 $this->session->flash(t('Task closed successfully.'));
             } else {
                 $this->session->flashError(t('Unable to close this task.'));
@@ -295,7 +290,7 @@ class Task extends Base
 
             $this->checkCSRFParam();
 
-            if ($this->task->open($task['id'])) {
+            if ($this->taskStatus->open($task['id'])) {
                 $this->session->flash(t('Task opened successfully.'));
             } else {
                 $this->session->flashError(t('Unable to open this task.'));
@@ -352,7 +347,7 @@ class Task extends Base
         if ($this->request->getStringParam('confirmation') === 'yes') {
 
             $this->checkCSRFParam();
-            $task_id = $this->task->duplicateToSameProject($task);
+            $task_id = $this->taskDuplication->duplicate($task['id']);
 
             if ($task_id) {
                 $this->session->flash(t('Task created successfully.'));
@@ -386,7 +381,7 @@ class Task extends Base
 
             if ($valid) {
 
-                if ($this->task->update($values)) {
+                if ($this->taskModification->update($values)) {
                     $this->session->flash(t('Task updated successfully.'));
                 }
                 else {
@@ -428,7 +423,36 @@ class Task extends Base
      */
     public function move()
     {
-        $this->toAnotherProject('move');
+        $task = $this->getTask();
+        $values = $task;
+        $errors = array();
+        $projects_list = $this->projectPermission->getMemberProjects($this->acl->getUserId());
+
+        unset($projects_list[$task['project_id']]);
+
+        if ($this->request->isPost()) {
+
+            $values = $this->request->getValues();
+            list($valid, $errors) = $this->taskValidator->validateProjectModification($values);
+
+            if ($valid) {
+
+                if ($this->taskDuplication->moveToProject($task['id'], $values['project_id'])) {
+                    $this->session->flash(t('Task updated successfully.'));
+                    $this->response->redirect('?controller=task&action=show&task_id='.$task['id']);
+                }
+                else {
+                    $this->session->flashError(t('Unable to update your task.'));
+                }
+            }
+        }
+
+        $this->response->html($this->taskLayout('task_move_project', array(
+            'values' => $values,
+            'errors' => $errors,
+            'task' => $task,
+            'projects_list' => $projects_list,
+        )));
     }
 
     /**
@@ -437,16 +461,6 @@ class Task extends Base
      * @access public
      */
     public function copy()
-    {
-        $this->toAnotherProject('duplicate');
-    }
-
-    /**
-     * Common methods between the actions "move" and "copy"
-     *
-     * @access private
-     */
-    private function toAnotherProject($action)
     {
         $task = $this->getTask();
         $values = $task;
@@ -461,7 +475,7 @@ class Task extends Base
             list($valid, $errors) = $this->taskValidator->validateProjectModification($values);
 
             if ($valid) {
-                $task_id = $this->task->{$action.'ToAnotherProject'}($values['project_id'], $task);
+                $task_id = $this->taskDuplication->duplicateToProject($task['id'], $values['project_id']);
                 if ($task_id) {
                     $this->session->flash(t('Task created successfully.'));
                     $this->response->redirect('?controller=task&action=show&task_id='.$task_id);
@@ -472,7 +486,7 @@ class Task extends Base
             }
         }
 
-        $this->response->html($this->taskLayout('task_'.$action.'_project', array(
+        $this->response->html($this->taskLayout('task_duplicate_project', array(
             'values' => $values,
             'errors' => $errors,
             'task' => $task,

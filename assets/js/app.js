@@ -80,6 +80,70 @@ var Kanboard = (function() {
             return true;
         },
 
+        // Generate Markdown preview
+        MarkdownPreview: function(e) {
+
+            e.preventDefault();
+
+            var link = $(this);
+            var nav = $(this).closest("ul");
+            var write = $(".write-area");
+            var preview = $(".preview-area");
+            var textarea = $("textarea");
+
+            var request = $.ajax({
+                url: "?controller=app&action=preview",
+                contentType: "application/json",
+                type: "POST",
+                processData: false,
+                dataType: "html",
+                data: JSON.stringify({
+                    "text": textarea.val()
+                }),
+            });
+
+            request.done(function(data) {
+
+                nav.find("li").removeClass("form-tab-selected");
+                link.parent().addClass("form-tab-selected");
+
+                preview.find(".markdown").html(data)
+                preview.css("height", textarea.css("height"));
+                preview.css("width", textarea.css("width"));
+
+                write.hide();
+                preview.show();
+            });
+        },
+
+        // Show the Markdown textarea
+        MarkdownWriter: function(e) {
+
+            e.preventDefault();
+
+            $(this).closest("ul").find("li").removeClass("form-tab-selected")
+            $(this).parent().addClass("form-tab-selected");
+
+            $(".write-area").show();
+            $(".preview-area").hide();
+        },
+
+        // Check session and redirect to the login page if not logged
+        CheckSession: function() {
+
+            if (! $(".form-login").length) {
+                $.ajax({
+                    cache: false,
+                    url: $("body").data("status-url"),
+                    statusCode: {
+                        401: function(data) {
+                            window.location = $("body").data("login-url");
+                        }
+                    }
+                });
+            }
+        },
+
         // Common init
         Init: function() {
 
@@ -99,13 +163,26 @@ var Kanboard = (function() {
             $("#board-selector").change(function() {
                 window.location = $(this).attr("data-board-url").replace(/%d/g, $(this).val());
             });
+
+            // Markdown Preview for textareas
+            $("#markdown-preview").click(Kanboard.MarkdownPreview);
+            $("#markdown-write").click(Kanboard.MarkdownWriter);
+
+            // Check the session every 10s
+            window.setInterval(Kanboard.CheckSession, 10000);
         }
     };
 
-})();// Board related functions
+})();
+// Board related functions
 Kanboard.Board = (function() {
 
     var checkInterval = null;
+
+    function on_popover(e)
+    {
+        Kanboard.Popover(e, Kanboard.Init);
+    }
 
     // Setup the board
     function board_load_events()
@@ -132,57 +209,72 @@ Kanboard.Board = (function() {
         $(".category-popover").click(Kanboard.Popover);
 
         // Task edit popover
-        $(".task-edit-popover").click(function(e) {
-            Kanboard.Popover(e, Kanboard.Init);
-        });
+        $(".task-edit-popover").click(on_popover);
+        $(".task-creation-popover").click(on_popover);
 
         // Description popover
-        $(".task-description-popover").click(Kanboard.Popover);
+        $(".task-description-popover").click(on_popover);
 
         // Tooltips
         $(".task-board-tooltip").tooltip({
             track: false,
-            position: { my: 'left-20 top', at: 'center bottom+9', using: function( position, feedback ) {
-                $( this ).css( position );
-                var arrow_pos = feedback.target.left + feedback.target.width / 2 - feedback.element.left - 20
-                $( "<div>" )
-                    .addClass("tooltip-arrow")
-                    .addClass(feedback.vertical)
-                    .addClass(arrow_pos == 0 ? "align-left" : "align-right")
-                    .appendTo(this);
-            }},
+            position: {
+                my: 'left-20 top',
+                at: 'center bottom+9',
+                using: function(position, feedback) {
+
+                    $(this).css(position);
+
+                    var arrow_pos = feedback.target.left + feedback.target.width / 2 - feedback.element.left - 20;
+
+                    $("<div>")
+                        .addClass("tooltip-arrow")
+                        .addClass(feedback.vertical)
+                        .addClass(arrow_pos == 0 ? "align-left" : "align-right")
+                        .appendTo(this);
+                }
+            },
             content: function(e) {
-                var content = $(this).attr('data-content');
-                 if (content)
-                    return content;
-                var href = $(this).attr('href');
-                if (!href)
+                var href = $(this).attr('data-href');
+
+                if (! href) {
                     return;
-                element = $(this)
+                }
+
                 $.get(href, function setTooltipContent(data) {
+
                     $('.ui-tooltip-content:visible').html(data);
-                    $('.ui-tooltip-content:visible a').click(function(e) {
+
+                    // Toggle subtasks status
+                    $('#tooltip-subtasks a').click(function(e) {
+
                         e.preventDefault();
                         e.stopPropagation();
-                        var href = $(this).attr('href');
-                        $.get(href, setTooltipContent);
+
+                        $.get($(this).attr('href'), setTooltipContent);
                     });
                 });
+
                 return '<i class="fa fa-refresh fa-spin fa-2x"></i>';
             }
-        }).on("mouseenter", function () {
+        }).on("mouseenter", function() {
+
             var _this = this;
             $(this).tooltip("open");
+
             $(".ui-tooltip").on("mouseleave", function () {
                 $(_this).tooltip('close');
             });
-        }).on("mouseleave focusout", function (e) {
-            e.stopImmediatePropagation();
 
+        }).on("mouseleave focusout", function (e) {
+
+            e.stopImmediatePropagation();
             var _this = this;
+
             setTimeout(function () {
-                if (!$(".ui-tooltip:hover").length)
+                if (! $(".ui-tooltip:hover").length) {
                     $(_this).tooltip("close");
+                }
             }, 100);
         });
 
@@ -308,27 +400,86 @@ Kanboard.Board = (function() {
 Kanboard.Task = (function() {
 
     return {
+
         Init: function() {
+
             // Image preview for attachments
             $(".file-popover").click(Kanboard.Popover);
         }
     };
 
 })();
+
 Kanboard.Analytic = (function() {
 
     return {
         Init: function() {
 
-            if (Kanboard.Exists("analytic-repartition")) {
-                Kanboard.Analytic.Repartition.Init();
+            if (Kanboard.Exists("analytic-task-repartition")) {
+                Kanboard.Analytic.TaskRepartition.Init();
+            }
+            else if (Kanboard.Exists("analytic-user-repartition")) {
+                Kanboard.Analytic.UserRepartition.Init();
+            }
+            else if (Kanboard.Exists("analytic-cfd")) {
+                Kanboard.Analytic.CFD.Init();
             }
         }
     };
 
 })();
 
-Kanboard.Analytic.Repartition = (function() {
+Kanboard.Analytic.CFD = (function() {
+
+    function fetchData()
+    {
+        jQuery.getJSON($("#chart").attr("data-url"), function(data) {
+            drawGraph(data.metrics, data.labels, data.columns);
+        });
+    }
+
+    function drawGraph(metrics, labels, columns)
+    {
+        var series = prepareSeries(metrics, labels);
+
+        var svg = dimple.newSvg("#chart", 800, 380);
+        var chart = new dimple.chart(svg, series);
+
+        var x = chart.addCategoryAxis("x", labels['day']);
+        x.addOrderRule("Date");
+
+        chart.addMeasureAxis("y", labels['total']);
+
+        var s = chart.addSeries(labels['column'], dimple.plot.area);
+        s.addOrderRule(columns.reverse());
+
+        chart.addLegend(10, 10, 500, 30, "left");
+        chart.draw();
+    }
+
+    function prepareSeries(metrics, labels)
+    {
+        var series = [];
+
+        for (var i = 0; i < metrics.length; i++) {
+
+            var row = {};
+            row[labels['column']] = metrics[i]['column_title'];
+            row[labels['day']] = metrics[i]['day'];
+            row[labels['total']] = metrics[i]['total'];
+            series.push(row);
+        }
+
+        return series;
+    }
+
+    return {
+        Init: fetchData
+    };
+
+})();
+
+Kanboard.Analytic.TaskRepartition = (function() {
 
     function fetchData()
     {
@@ -360,6 +511,51 @@ Kanboard.Analytic.Repartition = (function() {
             var serie = {};
             serie[labels["nb_tasks"]] = metrics[i]["nb_tasks"];
             serie[labels["column_title"]] = metrics[i]["column_title"];
+
+            series.push(serie);
+        }
+
+        return series;
+    }
+
+    return {
+        Init: fetchData
+    };
+
+})();
+
+Kanboard.Analytic.UserRepartition = (function() {
+
+    function fetchData()
+    {
+        jQuery.getJSON($("#chart").attr("data-url"), function(data) {
+            drawGraph(data.metrics, data.labels);
+        });
+    }
+
+    function drawGraph(metrics, labels)
+    {
+        var series = prepareSeries(metrics, labels);
+
+        var svg = dimple.newSvg("#chart", 700, 350);
+
+        var chart = new dimple.chart(svg, series);
+        chart.addMeasureAxis("p", labels["nb_tasks"]);
+        var ring = chart.addSeries(labels["user"], dimple.plot.pie);
+        ring.innerRadius = "50%";
+        chart.addLegend(0, 0, 100, 100, "left");
+        chart.draw();
+    }
+
+    function prepareSeries(metrics, labels)
+    {
+        var series = [];
+
+        for (var i = 0; i < metrics.length; i++) {
+
+            var serie = {};
+            serie[labels["nb_tasks"]] = metrics[i]["nb_tasks"];
+            serie[labels["user"]] = metrics[i]["user"];
 
             series.push(serie);
         }

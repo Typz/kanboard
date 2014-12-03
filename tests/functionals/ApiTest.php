@@ -25,9 +25,11 @@ class Api extends PHPUnit_Framework_TestCase
             $pdo = new PDO('pgsql:host='.DB_HOSTNAME.';dbname='.DB_NAME, DB_USERNAME, DB_PASSWORD);
         }
 
-        setup_db();
+        $service = new ServiceProvider\Database;
+        $service->getInstance();
 
         $pdo->exec("UPDATE settings SET value='".API_KEY."' WHERE option='api_token'");
+        $pdo->exec("UPDATE settings SET value='Europe/Paris' WHERE option='application_timezone'");
         $pdo = null;
     }
 
@@ -45,6 +47,12 @@ class Api extends PHPUnit_Framework_TestCase
         $this->assertEquals(1, count($tasks));
 
         return $tasks[0]['id'];
+    }
+
+    public function testGetTimezone()
+    {
+        $timezone = $this->client->getTimezone();
+        $this->assertEquals('Europe/Paris', $timezone);
     }
 
     public function testRemoveAll()
@@ -134,7 +142,11 @@ class Api extends PHPUnit_Framework_TestCase
 
     public function testAddColumn()
     {
-        $this->assertTrue($this->client->addColumn(1, 'New column'));
+        $column_id = $this->client->addColumn(1, 'New column');
+
+        $this->assertNotFalse($column_id);
+        $this->assertInternalType('int', $column_id);
+        $this->assertTrue($column_id > 0);
 
         $columns = $this->client->getColumns(1);
         $this->assertTrue(is_array($columns));
@@ -161,12 +173,15 @@ class Api extends PHPUnit_Framework_TestCase
             'column_id' => 2,
         );
 
-        //$this->assertTrue($this->client->execute('createTask', $task));
-        $this->assertTrue($this->client->createTask($task));
+        $task_id = $this->client->createTask($task);
+
+        $this->assertNotFalse($task_id);
+        $this->assertInternalType('int', $task_id);
+        $this->assertTrue($task_id > 0);
     }
 
     /**
-     * @expectedException BadFunctionCallException
+     * @expectedException InvalidArgumentException
      */
     public function testCreateTaskWithBadParams()
     {
@@ -206,12 +221,15 @@ class Api extends PHPUnit_Framework_TestCase
     public function testUpdateTask()
     {
         $task = $this->client->getTask(1);
-        $task['color_id'] = 'green';
-        $task['column_id'] = 1;
-        $task['description'] = 'test';
-        $task['date_due'] = '';
 
-        $this->assertTrue($this->client->execute('updateTask', $task));
+        $values = array();
+        $values['id'] = $task['id'];
+        $values['color_id'] = 'green';
+        $values['column_id'] = 1;
+        $values['description'] = 'test';
+        $values['date_due'] = '';
+
+        $this->assertTrue($this->client->execute('updateTask', $values));
     }
 
     public function testRemoveTask()
@@ -240,11 +258,14 @@ class Api extends PHPUnit_Framework_TestCase
             'password' => '123456',
         );
 
-        $this->assertTrue($this->client->execute('createUser', $user));
+        $user_id = $this->client->execute('createUser', $user);
+        $this->assertNotFalse($user_id);
+        $this->assertInternalType('int', $user_id);
+        $this->assertTrue($user_id > 0);
     }
 
     /**
-     * @expectedException BadFunctionCallException
+     * @expectedException InvalidArgumentException
      */
     public function testCreateUserWithBadParams()
     {
@@ -295,7 +316,7 @@ class Api extends PHPUnit_Framework_TestCase
 
     public function testGetAllowedUsers()
     {
-        $users = $this->client->getAllowedUsers(1);
+        $users = $this->client->getMembers(1);
         $this->assertNotFalse($users);
         $this->assertEquals(array(), $users);
     }
@@ -304,7 +325,7 @@ class Api extends PHPUnit_Framework_TestCase
     {
         $this->assertTrue($this->client->allowUser(1, 2));
 
-        $users = $this->client->getAllowedUsers(1);
+        $users = $this->client->getMembers(1);
         $this->assertNotFalse($users);
         $this->assertEquals(array(2 => 'Titi'), $users);
     }
@@ -313,7 +334,7 @@ class Api extends PHPUnit_Framework_TestCase
     {
         $this->assertTrue($this->client->revokeUser(1, 2));
 
-        $users = $this->client->getAllowedUsers(1);
+        $users = $this->client->getMembers(1);
         $this->assertNotFalse($users);
         $this->assertEquals(array(), $users);
     }
@@ -328,7 +349,7 @@ class Api extends PHPUnit_Framework_TestCase
             'column_id' => 1,
         );
 
-        $this->assertTrue($this->client->execute('createTask', $task));
+        $this->assertNotFalse($this->client->execute('createTask', $task));
 
         $tasks = $this->client->getAllTasks(1, 1);
         $this->assertNotEmpty($tasks);
@@ -340,7 +361,11 @@ class Api extends PHPUnit_Framework_TestCase
             'content' => 'boo',
         );
 
-        $this->assertTrue($this->client->execute('createComment', $comment));
+        $comment_id = $this->client->execute('createComment', $comment);
+
+        $this->assertNotFalse($comment_id);
+        $this->assertInternalType('int', $comment_id);
+        $this->assertTrue($comment_id > 0);
     }
 
     public function testGetComment()
@@ -374,7 +399,11 @@ class Api extends PHPUnit_Framework_TestCase
             'content' => 'blabla',
         );
 
-        $this->assertTrue($this->client->execute('createComment', $comment));
+        $comment_id = $this->client->createComment($comment);
+
+        $this->assertNotFalse($comment_id);
+        $this->assertInternalType('int', $comment_id);
+        $this->assertTrue($comment_id > 0);
 
         $comments = $this->client->getAllComments($task_id);
         $this->assertNotFalse($comments);
@@ -409,7 +438,11 @@ class Api extends PHPUnit_Framework_TestCase
             'title' => 'subtask #1',
         );
 
-        $this->assertTrue($this->client->execute('createSubtask', $subtask));
+        $subtask_id = $this->client->createSubtask($subtask);
+
+        $this->assertNotFalse($subtask_id);
+        $this->assertInternalType('int', $subtask_id);
+        $this->assertTrue($subtask_id > 0);
     }
 
     public function testGetSubtask()
@@ -443,7 +476,7 @@ class Api extends PHPUnit_Framework_TestCase
             'title' => 'Subtask #2',
         );
 
-        $this->assertTrue($this->client->execute('createSubtask', $subtask));
+        $this->assertNotFalse($this->client->execute('createSubtask', $subtask));
 
         $subtasks = $this->client->getAllSubtasks($this->getTaskId());
         $this->assertNotFalse($subtasks);
@@ -482,7 +515,10 @@ class Api extends PHPUnit_Framework_TestCase
             'project_id' => 1,
         );
 
-        $this->assertTrue($this->client->execute('createCategory', $category));
+        $cat_id = $this->client->execute('createCategory', $category);
+        $this->assertNotFalse($cat_id);
+        $this->assertInternalType('int', $cat_id);
+        $this->assertTrue($cat_id > 0);
 
         // Duplicate
 
@@ -495,7 +531,7 @@ class Api extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException BadFunctionCallException
+     * @expectedException InvalidArgumentException
      */
     public function testCategoryCreationWithBadParams()
     {

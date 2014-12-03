@@ -49,7 +49,7 @@ input[type="number"] {
 textarea {
     border: 1px solid #ccc;
     width: 400px;
-    max-width: 95%;
+    max-width: 99%;
     height: 200px;
     font-size: 1.0em;
     font-family: sans-serif;
@@ -81,6 +81,12 @@ select {
 
 input.form-error,
 textarea.form-error {
+    border: 2px solid #b94a48;
+}
+
+input.form-error:focus,
+textarea.form-error:focus {
+    box-shadow: none;
     border: 2px solid #b94a48;
 }
 
@@ -121,6 +127,10 @@ ul.form-errors li {
     margin-right: 15px;
 }
 
+.form-inline .form-required {
+    display: none;
+}
+
 input.form-date {
     width: 150px;
 }
@@ -136,7 +146,6 @@ input.form-input-large {
 
 .form-column {
     float: left;
-    margin-bottom: 60px;
     padding-right: 50px;
 }
 
@@ -162,4 +171,48 @@ input.form-input-large {
 
 .form-checkbox-group label {
     display: inline;
+}
+
+/* preview tabs */
+.form-tabs {
+    width: 100%;
+    max-width: 800px;
+}
+
+.form-tabs-nav {
+    margin-bottom: 8px;
+}
+
+.form-tabs-nav li {
+    margin-left: 0;
+    display: inline;
+}
+
+.form-tab {
+    margin-right: 20px;
+}
+
+.form-tab a {
+    color: #ccc;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.form-tab a:focus,
+.form-tab a:hover {
+    color: #000;
+}
+
+.form-tab-selected a {
+    color: #333;
+}
+
+.preview-area {
+    border: 1px dashed #000;
+    padding-top: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-bottom: 5px;
+    display: none;
+    overflow: auto;
 }

@@ -11,24 +11,24 @@ class NotificationTest extends Base
 {
     public function testGetUsersWithNotification()
     {
-        $u = new User($this->registry);
-        $p = new Project($this->registry);
-        $n = new Notification($this->registry);
-        $pp = new ProjectPermission($this->registry);
+        $u = new User($this->container);
+        $p = new Project($this->container);
+        $n = new Notification($this->container);
+        $pp = new ProjectPermission($this->container);
 
         $this->assertEquals(1, $p->create(array('name' => 'UnitTest1')));
 
         // Email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user1', 'email' => 'user1@here', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user1', 'email' => 'user1@here', 'notifications_enabled' => 1)));
 
         // No email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user2', 'email' => '', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user2', 'email' => '', 'notifications_enabled' => 1)));
 
         // Email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user3', 'email' => 'user3@here', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user3', 'email' => 'user3@here', 'notifications_enabled' => 1)));
 
         // No email + notifications disabled
-        $this->assertTrue($u->create(array('username' => 'user4')));
+        $this->assertNotFalse($u->create(array('username' => 'user4')));
 
         // Nobody is member of any projects
         $this->assertEmpty($pp->getMembers(1));
@@ -51,26 +51,26 @@ class NotificationTest extends Base
 
     public function testGetUserList()
     {
-        $u = new User($this->registry);
-        $p = new Project($this->registry);
-        $pp = new ProjectPermission($this->registry);
-        $n = new Notification($this->registry);
+        $u = new User($this->container);
+        $p = new Project($this->container);
+        $pp = new ProjectPermission($this->container);
+        $n = new Notification($this->container);
 
         $this->assertEquals(1, $p->create(array('name' => 'UnitTest1')));
         $this->assertEquals(2, $p->create(array('name' => 'UnitTest2')));
         $this->assertEquals(3, $p->create(array('name' => 'UnitTest3', 'is_everybody_allowed' => 1)));
 
         // Email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user1', 'email' => 'user1@here', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user1', 'email' => 'user1@here', 'notifications_enabled' => 1)));
 
         // No email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user2', 'email' => '', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user2', 'email' => '', 'notifications_enabled' => 1)));
 
         // Email + Notifications enabled
-        $this->assertTrue($u->create(array('username' => 'user3', 'email' => 'user3@here', 'notifications_enabled' => 1)));
+        $this->assertNotFalse($u->create(array('username' => 'user3', 'email' => 'user3@here', 'notifications_enabled' => 1)));
 
         // No email + notifications disabled
-        $this->assertTrue($u->create(array('username' => 'user4')));
+        $this->assertNotFalse($u->create(array('username' => 'user4')));
 
         // We allow all users to be member of our projects
         $this->assertTrue($pp->allowUser(1, 1));

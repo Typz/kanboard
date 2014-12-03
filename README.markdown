@@ -89,6 +89,7 @@ Documentation
 - [Installation on Ubuntu](docs/ubuntu-installation.markdown)
 - [Installation on Debian](docs/debian-installation.markdown)
 - [Installation on Centos](docs/centos-installation.markdown)
+- [Installation on FreeBSD](docs/freebsd-installation.markdown)
 - [Installation on Windows Server with IIS](docs/windows-iis-installation.markdown)
 - [Example with Nginx + HTTPS + SPDY + PHP-FPM](docs/nginx-ssl-php-fpm.markdown)
 
@@ -152,6 +153,7 @@ Contributors:
 - [Gavlepeter](https://github.com/gavlepeter)
 - [Janne Mäntyharju](https://github.com/JanneMantyharju)
 - [Jesusaplsoft](https://github.com/jesusaplsoft)
+- [Karol J](https://github.com/dzudek)
 - [Kiswa](https://github.com/kiswa)
 - [Kralo](https://github.com/kralo)
 - [Lars Christian Schou](https://github.com/NegoZiatoR)

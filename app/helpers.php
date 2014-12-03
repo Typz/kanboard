@@ -8,7 +8,7 @@ namespace Helper;
  */
 use Core\Security;
 use Core\Template;
-use Core\Tool;
+use Core\Request;
 use Parsedown;
 
 /**
@@ -142,7 +142,7 @@ function markdown($text, array $link = array('controller' => 'task', 'action' =>
  */
 function get_current_base_url()
 {
-    $url = Tool::isHTTPS() ? 'https://' : 'http://';
+    $url = Request::isHTTPS() ? 'https://' : 'http://';
     $url .= $_SERVER['SERVER_NAME'];
     $url .= $_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443 ? '' : ':'.$_SERVER['SERVER_PORT'];
     $url .= dirname($_SERVER['PHP_SELF']) !== '/' ? dirname($_SERVER['PHP_SELF']).'/' : '/';
@@ -445,7 +445,6 @@ function form_textarea($name, $values = array(), array $errors = array(), array 
     $html .= implode(' ', $attributes).'>';
     $html .= isset($values->$name) ? escape($values->$name) : isset($values[$name]) ? $values[$name] : '';
     $html .= '</textarea>';
-    if (in_array('required', $attributes)) $html .= '<span class="form-required">*</span>';
     $html .= error_list($errors, $name);
 
     return $html;
@@ -575,11 +574,12 @@ function form_numeric($name, $values = array(), array $errors = array(), array $
  * @param  array    $params      Url parameters
  * @param  boolean  $csrf        Add a CSRF token
  * @param  string   $class       CSS class attribute
+ * @param  boolean  $new_tab     Open the link in a new tab
  * @return string
  */
-function a($label, $controller, $action, array $params = array(), $csrf = false, $class = '', $title = '')
+function a($label, $controller, $action, array $params = array(), $csrf = false, $class = '', $title = '', $new_tab = false)
 {
-    return '<a href="'.u($controller, $action, $params, $csrf).'" class="'.$class.'" title="'.$title.'">'.$label.'</a>';
+    return '<a href="'.u($controller, $action, $params, $csrf).'" class="'.$class.'" title="'.$title.'" '.($new_tab ? 'target="_blank"' : '').'>'.$label.'</a>';
 }
 
 /**
@@ -618,8 +618,12 @@ function paginate(array $pagination)
 {
     extract($pagination);
 
-    $html = '<div id="pagination">';
-    $html .= '<span id="pagination-previous">';
+    if ($pagination['offset'] === 0 && ($total - $pagination['offset']) < $limit) {
+        return '';
+    }
+
+    $html = '<div class="pagination">';
+    $html .= '<span class="pagination-previous">';
 
     if ($pagination['offset'] > 0) {
         $offset = $pagination['offset'] - $limit;
@@ -630,7 +634,7 @@ function paginate(array $pagination)
     }
 
     $html .= '</span>';
-    $html .= '<span id="pagination-next">';
+    $html .= '<span class="pagination-next">';
 
     if (($total - $pagination['offset']) > $limit) {
         $offset = $pagination['offset'] + $limit;
