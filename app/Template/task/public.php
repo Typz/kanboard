@@ -1,10 +1,10 @@
 <section id="main" class="public-task">
 
-    <?= Helper\template('task_details', array('task' => $task, 'project' => $project)) ?>
+    <?= Helper\template('task/details', array('task' => $task, 'project' => $project)) ?>
 
     <p class="pull-right"><?= Helper\a(t('Back to the board'), 'board', 'readonly', array('token' => $project['token'])) ?></p>
 
-    <?= Helper\template('task_show_description', array(
+    <?= Helper\template('task/show_description', array(
         'task' => $task,
         'project' => $project,
         'is_public' => true
@@ -16,7 +16,7 @@
         'not_editable' => true
     )) ?>
 
-    <?= Helper\template('task_comments', array(
+    <?= Helper\template('task/comments', array(
         'task' => $task,
         'comments' => $comments,
         'project' => $project,
