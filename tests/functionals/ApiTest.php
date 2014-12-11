@@ -68,7 +68,9 @@ class Api extends PHPUnit_Framework_TestCase
 
     public function testCreateProject()
     {
-        $this->assertTrue($this->client->createProject('API test'));
+        $project_id = $this->client->createProject('API test');
+        $this->assertNotFalse($project_id);
+        $this->assertInternalType('int', $project_id);
     }
 
     public function testGetProjectById()
@@ -76,6 +78,21 @@ class Api extends PHPUnit_Framework_TestCase
         $project = $this->client->getProjectById(1);
         $this->assertNotEmpty($project);
         $this->assertEquals(1, $project['id']);
+    }
+
+    public function testGetProjectByName()
+    {
+        $project = $this->client->getProjectByName('API test');
+        $this->assertNotEmpty($project);
+        $this->assertEquals(1, $project['id']);
+
+        $project = $this->client->getProjectByName(array('name' => 'API test'));
+        $this->assertNotEmpty($project);
+        $this->assertEquals(1, $project['id']);
+
+        $project = $this->client->getProjectByName('None');
+        $this->assertEmpty($project);
+        $this->assertNull($project);
     }
 
     public function testUpdateProject()
