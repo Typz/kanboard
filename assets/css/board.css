@@ -4,9 +4,8 @@ a.filter-on {
     color: #333;
 }
 
-.board-filters {
+.board-filters .hide-tablet {
     float:right;
-    padding-top:10px
 }
 
 /* public board */
