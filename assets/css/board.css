@@ -65,3 +65,9 @@ a.filter-on {
     margin-bottom: 10px;
     border-radius: 4px;
 }
+
+/* swimlanes */
+th.board-swimlane-title {
+    vertical-align: top;
+    text-align: right;
+}

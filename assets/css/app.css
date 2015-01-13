@@ -156,6 +156,10 @@ th a:hover {
     width: 30%;
 }
 
+.column-35 {
+    width: 35%;
+}
+
 .column-40 {
     width: 40%;
 }
@@ -519,9 +523,11 @@ a.btn-blue:focus,
     }
 }
 
+#main .alert,
 .page .alert {
     margin-top: 10px;
-}/* tooltip */
+}
+/* tooltip */
 .tooltip-arrow:after {
     background: #fff;
     border: 1px solid #aaaaaa;
@@ -590,7 +596,8 @@ div.ui-tooltip {
 
 .ui-tooltip-content .markdown p {
     margin-bottom: 0px;
-}/* header */
+}
+/* header */
 header {
     margin-top: 10px;
     padding-bottom: 15px;
@@ -743,7 +750,12 @@ a.filter-on {
     margin-bottom: 10px;
     border-radius: 4px;
 }
-/* project view */
+
+/* swimlanes */
+th.board-swimlane-title {
+    vertical-align: top;
+    text-align: right;
+}/* project view */
 .project-listing {
     max-width: 500px;
     margin-left: 30px;
@@ -812,6 +824,15 @@ a.filter-on {
 
 .task-board-user {
     font-size: 80%;
+}
+
+.task-board-current-user a {
+    text-decoration: underline;
+}
+
+.task-board-current-user a:focus,
+.task-board-current-user a:hover {
+    text-decoration: none;
 }
 
 a.task-board-nobody {
@@ -1171,6 +1192,7 @@ tr td.task-orange,
     border: 1px solid #ddd;
     color: #333;
     background-color: #fefefe;
+    overflow: auto;
 }
 
 .listing li {
@@ -1224,19 +1246,23 @@ tr td.task-orange,
     margin-top: 10px;
     color: #555;
 }/* dashboard */
-#dashboard table {
-    font-size: 0.9em;
-}
 
-.dashboard-left-column {
-    width: 55%;
-    float: left;
-}
+@media only screen and (min-width: 1280px) {
 
-.dashboard-right-column {
-    margin-left: 5%;
-    width: 40%;
-    float: left;
+    #dashboard table {
+        font-size: 0.9em;
+    }
+
+    .dashboard-left-column {
+        width: 55%;
+        float: left;
+    }
+
+    .dashboard-right-column {
+        margin-left: 5%;
+        width: 40%;
+        float: left;
+    }
 }
 
 .dashboard-project-stats span {
@@ -1246,7 +1272,7 @@ tr td.task-orange,
 }
 
 .dashboard-project-stats strong {
-    font-size: 1.1em;
+    font-size: 1.2em;
 }
 
 .dashboard-table-link {
@@ -1294,6 +1320,8 @@ tr td.task-orange,
     top: 5%;
     padding: 15px;
     background: #fff;
+    overflow: scroll;
+    max-height: 83%;
 }
 /* confirmation box */
 .confirm {
@@ -1356,6 +1384,15 @@ tr td.task-orange,
 
     td > input[type="text"] {
         max-width: 150px;
+    }
+
+    .task-time-form label {
+        display: block;
+    }
+
+    .task-time-form input[type="submit"] {
+        margin-top: 10px;
+        display: block;
     }
 }
 

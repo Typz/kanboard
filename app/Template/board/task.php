@@ -1,6 +1,8 @@
-<?php if (isset($not_editable)): ?>
+<?php if ($not_editable): ?>
 
-    <?= Helper\a('#'.$task['id'], 'task', 'readonly', array('task_id' => $task['id'], 'token' => $project['token'])) ?>
+<div class="task-board task-<?= $task['color_id'] ?> <?= $task['date_modification'] > time() - $board_highlight_period ? 'task-board-recent' : '' ?>">
+
+    <?= $this->a('#'.$task['id'], 'task', 'readonly', array('task_id' => $task['id'], 'token' => $project['token'])) ?>
 
     <?php if ($task['reference']): ?>
     <span class="task-board-reference" title="<?= t('Reference') ?>">
@@ -8,13 +10,13 @@
     </span>
     <?php endif ?>
 
-	&nbsp;-&nbsp;
+    &nbsp;-&nbsp;
 
     <div class="task-board-category-container">
         <?php if ($task['category_id']): ?>
             <span class="task-board-category">
-                <?= Helper\a(
-                    Helper\in_list($task['category_id'], $categories),
+                <?= $this->a(
+                    $this->inList($task['category_id'], $categories),
                     'board',
                     'changeCategory',
                     array('task_id' => $task['id']),
@@ -23,9 +25,9 @@
                     t('Change category')
                 ) ?>
             </span>
-		<?php endif ?>
+        <?php endif ?>
         <?php if ($task['score']): ?>
-            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+            <span class="task-score"><?= $this->e($task['score']) ?></span>
         <?php endif ?>
     </div>
 
@@ -39,12 +41,20 @@
 
 
     <div class="task-board-title">
-        <?= Helper\a(Helper\escape($task['title']), 'task', 'readonly', array('task_id' => $task['id'], 'token' => $project['token'])) ?>
+        <?= $this->a($this->e($task['title']), 'task', 'readonly', array('task_id' => $task['id'], 'token' => $project['token'])) ?>
     </div>
 
 <?php else: ?>
 
-    <?= Helper\a('#'.$task['id'], 'task', 'edit', array('task_id' => $task['id']), false, 'task-edit-popover', t('Edit this task')) ?>
+<div class="task-board draggable-item task-<?= $task['color_id'] ?> <?= $task['date_modification'] > time() - $board_highlight_period ? 'task-board-recent' : '' ?>"
+     data-task-id="<?= $task['id'] ?>"
+     data-owner-id="<?= $task['owner_id'] ?>"
+     data-category-id="<?= $task['category_id'] ?>"
+     data-due-date="<?= $task['date_due'] ?>"
+     data-task-url="<?= $this->u('task', 'show', array('task_id' => $task['id'], 'project_id' => $task['project_id'])) ?>"
+     title="<?= t('View this task') ?>">
+
+    <?= $this->a('#'.$task['id'], 'task', 'edit', array('task_id' => $task['id'], 'project_id' => $task['project_id']), false, 'task-edit-popover', t('Edit this task')) ?>
 
     <?php if ($task['reference']): ?>
     <span class="task-board-reference" title="<?= t('Reference') ?>">
@@ -57,8 +67,8 @@
     <div class="task-board-category-container">
         <?php if ($task['category_id']): ?>
             <span class="task-board-category">
-                <?= Helper\a(
-                    Helper\in_list($task['category_id'], $categories),
+                <?= $this->a(
+                    $this->inList($task['category_id'], $categories),
                     'board',
                     'changeCategory',
                     array('task_id' => $task['id']),
@@ -69,17 +79,16 @@
             </span>
 		<?php endif ?>
         <?php if ($task['score']): ?>
-            <span class="task-score"><?= Helper\escape($task['score']) ?></span>
+            <span class="task-score"><?= $this->e($task['score']) ?></span>
         <?php endif ?>
     </div>
 
-    <span class="task-board-user">
-        <?= Helper\a(
-            (! empty($task['owner_id']) ? t('Assigned to %s', $task['assignee_name'] ?: $task['assignee_username']) : t('Nobody assigned')) .
-            ( Helper\is_current_user($task['owner_id']) ? '&nbsp;<i class="fa fa-star"></i>' : ''),
+    <span class="task-board-user <?= $this->userSession->isCurrentUser($task['owner_id']) ? 'task-board-current-user' : '' ?>">
+        <?= $this->a(
+            (! empty($task['owner_id']) ? t('Assigned to %s', $task['assignee_name'] ?: $task['assignee_username']) : t('Nobody assigned')),
             'board',
             'changeAssignee',
-            array('task_id' => $task['id']),
+            array('task_id' => $task['id'], 'project_id' => $task['project_id']),
             false,
             'assignee-popover',
             t('Change assignee')
@@ -87,7 +96,7 @@
     </span>
 
     <div class="task-board-title">
-        <?= Helper\a(Helper\escape($task['title']), 'task', 'show', array('task_id' => $task['id']), false, '', t('View this task')) ?>
+        <?= $this->a($this->e($task['title']), 'task', 'show', array('task_id' => $task['id'], 'project_id' => $task['project_id']), false, '', t('View this task')) ?>
     </div>
 
 <?php endif ?>
@@ -104,19 +113,19 @@
     <div class="task-board-icons">
 
         <?php if (! empty($task['nb_subtasks'])): ?>
-            <span title="<?= t('Sub-Tasks') ?>" class="task-board-tooltip" data-href="<?= helper\u('board', 'subtasks', array('task_id' => $task['id'])) ?>"><i class="fa fa-bars"></i><?= $task['nb_completed_subtasks'].'/'.$task['nb_subtasks'] ?></span>
+            <span title="<?= t('Sub-Tasks') ?>" class="task-board-tooltip" data-href="<?= $this->u('board', 'subtasks', array('task_id' => $task['id'], 'project_id' => $task['project_id'])) ?>"><i class="fa fa-bars"></i><?= $task['nb_completed_subtasks'].'/'.$task['nb_subtasks'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['nb_files'])): ?>
-            <span title="<?= t('Attachments') ?>" class="task-board-tooltip" data-href="<?= helper\u('board', 'attachments', array('task_id' => $task['id'])) ?>"><i class="fa fa-paperclip"></i><?= $task['nb_files'] ?></span>
+            <span title="<?= t('Attachments') ?>" class="task-board-tooltip" data-href="<?= $this->u('board', 'attachments', array('task_id' => $task['id'], 'project_id' => $task['project_id'])) ?>"><i class="fa fa-paperclip"></i><?= $task['nb_files'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['nb_comments'])): ?>
-            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>" class="task-board-tooltip" data-href="<?= helper\u('board', 'comments', array('task_id' => $task['id'])) ?>"><i class="fa fa-comment-o"></i><?= $task['nb_comments'] ?></span>
+            <span title="<?= p($task['nb_comments'], t('%d comment', $task['nb_comments']), t('%d comments', $task['nb_comments'])) ?>" class="task-board-tooltip" data-href="<?= $this->u('board', 'comments', array('task_id' => $task['id'], 'project_id' => $task['project_id'])) ?>"><i class="fa fa-comment-o"></i><?= $task['nb_comments'] ?></span>
         <?php endif ?>
 
         <?php if (! empty($task['description'])): ?>
-            <span title="<?= t('Description') ?>" class="task-board-tooltip" data-href="<?= helper\u('board', 'description', array('task_id' => $task['id'])) ?>">
+            <span title="<?= t('Description') ?>" class="task-board-tooltip" data-href="<?= $this->u('board', 'description', array('task_id' => $task['id'], 'project_id' => $task['project_id'])) ?>">
             <?php if (! isset($not_editable)): ?>
                 <a class="task-description-popover" href="?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>"><i class="fa fa-file-text-o" data-href="?controller=task&amp;action=description&amp;task_id=<?= $task['id'] ?>"></i></a>
             <?php else: ?>
@@ -127,3 +136,5 @@
     </div>
 </div>
 <?php endif ?>
+
+</div>
